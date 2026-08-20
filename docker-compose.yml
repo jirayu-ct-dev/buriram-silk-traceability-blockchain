@@ -7,6 +7,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: buriram_silk
     ports:
+      # host 5437 (เลี่ยงชน PostgreSQL/โปรเจกต์อื่น) → container 5432
       - "5437:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -15,6 +16,46 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # One-shot: apply Prisma migrations แล้วจบ (ไม่รันค้าง)
+  migrate:
+    build:
+      context: .
+      target: builder
+    command: pnpm exec prisma migrate deploy
+    environment:
+      # ภายใน network ของ compose เรียกผ่านชื่อ service ที่ port ต้นทาง ไม่ใช่ host port 5437
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/buriram_silk
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      target: runner
+    ports:
+      # host 3007 (เลี่ยงชนโปรเจกต์อื่นบน 3000) → container 3000
+      - "3007:3000"
+    env_file:
+      # อ่าน NUXT_SESSION_PASSWORD ฯลฯ จาก .env ของ host
+      - .env
+    environment:
+      # override ค่าจาก .env ให้ชี้เข้า network ของ compose
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/buriram_silk
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
 volumes:
   postgres_data:

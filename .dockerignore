@@ -1,0 +1,25 @@
+# Git
+.git
+.gitignore
+
+# Dependencies และ build outputs (สร้างใหม่ใน image)
+node_modules
+.output
+.nuxt
+.nitro
+.data
+node_modules/.cache
+
+# Secrets และไฟล์ runtime ของเครื่อง host (ส่งค่าผ่าน compose environment แทน)
+.env
+.env.*
+!.env.example
+
+# ไฟล์และโฟลเดอร์ที่ build ไม่ใช้
+storage
+test
+test-results
+playwright-report
+docs
+*.log
+.DS_Store

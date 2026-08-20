@@ -21,26 +21,42 @@ Source of truth ของการออกแบบ: [`docs/system-design.md`](
 
 ## เริ่มต้นใช้งาน (สำหรับสมาชิกทีม)
 
-**Prerequisites:** Node.js 20.19+ · pnpm 11 (`corepack enable`) · Docker Desktop
+**Prerequisites:** Docker Desktop · (วิธีที่ 2 เพิ่ม: Node.js 20.19+ · pnpm 11 ผ่าน `corepack enable`)
+
+เตรียมไฟล์ environment ก่อนเสมอ:
 
 ```bash
-# 1. ติดตั้ง dependencies
-pnpm install
-
-# 2. สร้างไฟล์ environment
 cp .env.example .env
 # แก้ NUXT_SESSION_PASSWORD เป็นค่าสุ่มอย่างน้อย 32 ตัวอักษร
-# (สร้างได้ด้วย: openssl rand -base64 32)
+# (สร้างด้วย: openssl rand -base64 32)
+```
 
-# 3. เริ่ม PostgreSQL (รอสถานะ healthy สักครู่)
-docker compose up -d
+### วิธีที่ 1 — รันทั้งระบบด้วย Docker (คำสั่งเดียว)
 
-# 4. รัน database migration
+```bash
+docker compose up -d --build
+```
+
+ระบบจะเริ่ม 3 services ตามลำดับอัตโนมัติ: **postgres** (รอ healthy) → **migrate** (apply Prisma migrations แล้วจบ) → **app** (production build)
+
+- เข้าใช้งานที่ **http://localhost:3007**
+- คำสั่งเสริม: `docker compose logs -f app` (ดู log) · `docker compose up -d postgres` (เฉพาะ DB สำหรับ dev) · `docker compose down` (ปิดทั้งหมด — ข้อมูลใน volume ไม่หาย)
+
+### วิธีที่ 2 — พัฒนาด้วย pnpm dev (แนะนำตอนเขียนโค้ด)
+
+```bash
+# 1. เริ่มเฉพาะ PostgreSQL (รอสถานะ healthy สักครู่)
+docker compose up -d postgres
+
+# 2. ติดตั้ง dependencies + รัน database migration
+pnpm install
 pnpm db:migrate
 
-# 5. เริ่ม dev server → http://localhost:3007
+# 3. เริ่ม dev server → http://localhost:3007
 pnpm dev
 ```
+
+> **ข้อควรระวัง:** service `app` ของ Docker กับ `pnpm dev` ใช้ port 3007 ทั้งคู่ — ก่อนเริ่ม dev ให้ `docker compose stop app` ก่อน
 
 ## Scripts
 
@@ -79,6 +95,8 @@ shared/
 prisma/
   schema.prisma           # Domain schema 14 ตาราง
   migrations/
+docker-compose.yml        # postgres + migrate (one-shot) + app
+Dockerfile                # Multi-stage build (builder → runner)
 test/
   unit/ integration/ e2e/
 storage/

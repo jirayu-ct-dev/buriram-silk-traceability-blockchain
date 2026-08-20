@@ -228,6 +228,19 @@ Responsive behavior:
 - ไม่ตัดข้อความที่สำคัญต่อการแยกรายการหรือทำ action โดยไม่มีวิธีดูค่าครบ
 - หลีกเลี่ยง fixed heights ในพื้นที่ที่ content เปลี่ยนได้ เว้นแต่มี overflow behavior ที่ตั้งใจไว้
 
+## Docker และ Deployment
+
+เมื่อโปรเจกต์มี Dockerfile หรือ docker-compose ให้รักษาหลักการเดียวกันทั้งทีม:
+
+- ใช้ **multi-stage build** เสมอ — stage สร้าง (dependencies เต็มชุด + generate ORM client + framework build) แยกจาก stage รัน (คัดลอกเฉพาะ build output ไป base image เปล่า) เพื่อไม่พา devDependencies และ source ขึ้น production image
+- **ตรึง version ของ base image** เช่น `node:24-alpine` — ห้ามใช้ `latest`; ติดตั้ง dependencies ด้วย lockfile (`pnpm install --frozen-lockfile`) และใช้ corepack อ่าน `packageManager` จาก package.json
+- จัด layer ให้ cache ได้: COPY manifest (package.json, lockfile) → install → COPY source → build; เมื่อแก้แค่โค้ด ไม่ต้องติดตั้ง dependencies ใหม่
+- ใช้ **`.dockerignore`** ตัด `node_modules`, build outputs, `.env`, `.git`, `storage/` และ test artifacts ออกจาก build context — ทั้งเร็วขึ้นและกัน secret หลุดเข้า image
+- **ห้ามฝัง secret ใน image** — ส่งค่า runtime ผ่าน compose `environment`/`env_file`; ค่าที่ต่างกันระหว่าง host กับ container network (เช่น `DATABASE_URL` ใช้ชื่อ service `postgres:5432` ไม่ใช่ `localhost`) ให้ override ใน compose โดย `environment` ชนะ `env_file`
+- **รัน migration เป็น one-shot service** ที่ `depends_on` DB แบบ `service_healthy` และให้ app `depends_on` migrate แบบ `service_completed_successfully` — ได้ลำดับ DB พร้อม → migrate จบ → app start ด้วยคำสั่งเดียว (`docker compose up -d --build`)
+- ใน container รัน **production build** (เช่น Nitro `.output`) เท่านั้น ไม่รัน dev server ใน image; bind `0.0.0.0` และ map host port ตามที่โปรเจกต์กำหนด (เลี่ยงชนกับ service อื่นบนเครื่อง)
+- ใส่ **healthcheck** ให้ทุก service ระยะยาว (DB ใช้ readiness command ของตัวเอง, app ใช้ HTTP endpoint เบา), รันด้วย **user ที่ไม่ใช่ root** และตั้ง restart policy ตามความเหมาะสม (`migrate` ต้องเป็น `restart: "no"`)
+
 ## Scope-based Review
 
 ตรวจเฉพาะหัวข้อที่เกี่ยวข้องกับงาน แต่ต้องไม่พลาดผลกระทบข้างเคียง:
