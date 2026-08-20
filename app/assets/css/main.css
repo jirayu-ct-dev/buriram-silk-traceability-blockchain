@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+/* Full-height hero: fills the viewport below the navbar (h-16 = 4rem).
+   dvh tracks the dynamic viewport on mobile browsers; vh is the fallback. */
+@utility min-h-hero {
+  min-height: calc(100vh - 4rem);
+  min-height: calc(100dvh - 4rem);
+}
+
+/* Tall viewports keep generous vertical rhythm;
+   short viewports (small laptops, landscape phones) compress spacing instead of clipping content. */
+@custom-variant tall (@media (min-height: 700px));
