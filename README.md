@@ -105,13 +105,17 @@ storage/
 
 ## การแบ่งงานทีม (5 คน)
 
-| ผู้รับผิดชอบ | Module | อ้างอิงหลัก | ส่งมอบหลัก |
-|---|---|---|---|
-| PM | Shared UI + Layout + ประสานงาน | system-design §5.1–5.3 | layouts, ui components, useToast/useConfirm |
-| สมาชิก 1 | Auth + RBAC | §5.2, §14.4 | login/logout, session, middleware `auth.ts`/`role.ts`, seed บัญชี demo |
-| สมาชิก 2 | Silk Item Workflow | §6.1–6.2, §11.1 | draft/revision/evidence upload/submit, review queue |
-| สมาชิก 3 | Ledger Simulator | §8, §10.4–10.7 | SHA-256 chain, Ed25519, PoA round-robin, `/api/ledger/*` |
-| สมาชิก 4 | Certification + Transfer | §6.3, §11.2–11.5 | approve แบบ atomic, QR, public cert page, custody transfer |
+> **แผนงานฉบับเต็ม:** โฟลเดอร์ [`docs/teamwork/`](docs/teamwork/) — แยกเป็น brief รายคน ใช้ต่อกับ AI agent ได้เลยจนจบ
+> **วิธีใช้:** แจกไฟล์ของแต่ละคน (01–04) ให้เพื่อนบอก AI agent ว่า "อ่าน `AGENTS.md` → skill `web-ui-coding-standards` → `docs/teamwork/00-shared-contract.md` → ไฟล์ brief ของตัวเอง แล้วทำตาม checklist" — ทุกคนทำงานบน branch ตัวเอง แล้ว PM รวมตามคู่มือ `05-pm-integration.md`
+
+| ไฟล์ brief | บทบาท | ขอบเขตหลัก |
+|---|---|---|
+| `00-shared-contract.md` | ทุกคน | สัญญากลาง: contract A/B/C, แผนที่ความเป็นเจ้าของไฟล์, กติกา |
+| `01-docs.md` | สมาชิก 1 | รายงาน + สไลด์ + references ทั้งหมด + หน้า about/privacy |
+| `02-frontend.md` | สมาชิก 2 | หน้าจริงทุกหน้า + useToast/useConfirm + shared UI |
+| `03-backend.md` | สมาชิก 3 | API ทุก endpoint + auth/RBAC + seed |
+| `04-blockchain-qa.md` | สมาชิก 4 | Ledger Simulator (SHA-256/Ed25519/PoA) + QA ระบบท้ายโครงการ |
+| `05-pm-integration.md` | PM (คุณ) | ลำดับ merge, ตรวจ conflict, Quality Gate, Demo Day |
 
 **ลำดับการทำงาน (Build Order):** ตาม `docs/system-design.md` §19 — Foundation → Shared UI → Auth/RBAC → Silk Item Workflow → Ledger Simulator → Certification → Certificate Status/Custody → Blockchain Explorer → Quality Gate → Demo
 
