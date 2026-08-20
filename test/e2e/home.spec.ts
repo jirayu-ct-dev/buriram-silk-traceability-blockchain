@@ -41,7 +41,31 @@ test('public navbar swaps login button for user menu after sign in', async ({ pa
   const banner = page.getByRole('banner')
   await expect(banner.getByRole('link', { name: 'เข้าสู่ระบบ' })).toHaveCount(0)
   await banner.getByRole('button', { name: 'เมนูผู้ใช้' }).click()
-  await banner.getByRole('link', { name: 'หน้าหลัก' }).click()
+  await banner.getByRole('link', { name: 'หน้า Dashboard' }).click()
+  await expect(page).toHaveURL(/\/weaver$/)
+})
+
+test('switching role from a public page navigates to the role dashboard', async ({ page }) => {
+  await signInAs(page, 'ช่างทอ', '/weaver')
+
+  await page.goto('/ledger')
+  await waitForHydration(page)
+
+  await page.getByRole('button', { name: 'เมนูผู้ใช้' }).click()
+  await page.getByRole('button', { name: 'ร้านค้า', exact: true }).click()
+  await expect(page).toHaveURL(/\/transfers$/)
+  await expect(page.getByRole('heading', { name: 'การส่งมอบ' })).toBeVisible()
+})
+
+test('user menu links to dashboard and public home', async ({ page }) => {
+  await signInAs(page, 'ช่างทอ', '/weaver')
+
+  await page.getByRole('button', { name: 'เมนูผู้ใช้' }).click()
+  await page.getByRole('link', { name: 'หน้าเว็บหลัก' }).click()
+  await expect(page).toHaveURL(/\/$/)
+
+  await page.getByRole('button', { name: 'เมนูผู้ใช้' }).click()
+  await page.getByRole('link', { name: 'หน้า Dashboard' }).click()
   await expect(page).toHaveURL(/\/weaver$/)
 })
 
@@ -119,8 +143,22 @@ test('sidebar highlights the longest matching menu item', async ({ page }) => {
   await expect(sidebar.getByRole('link', { name: 'ภาพรวม' })).toHaveAttribute('aria-current', 'page')
 })
 
-test('every authenticated page renders its skeleton', async ({ page }) => {
-  await signInAs(page, 'ช่างทอ', '/weaver')
+test('public detail and policy pages render their skeletons', async ({ page }) => {
+  const cases: [string, string][] = [
+    ['/certificate/BR-SILK-000001', 'รายละเอียดใบรับรอง'],
+    ['/ledger/12', 'Block #12'],
+    ['/privacy', 'นโยบายความเป็นส่วนตัว'],
+  ]
+  for (const [path, heading] of cases) {
+    const response = await page.goto(path)
+    expect(response?.status()).toBe(200)
+    await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
+  }
+
+  await expect(page.getByRole('heading', { name: 'นโยบายความเป็นส่วนตัว' })).toBeVisible()
+})
+
+test('every authenticated page renders its skeleton', async ({ page }) => {  await signInAs(page, 'ช่างทอ', '/weaver')
 
   const cases: [string, string][] = [
     ['/weaver/items/new', 'ลงทะเบียนผ้าไหม'],

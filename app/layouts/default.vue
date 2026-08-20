@@ -112,7 +112,15 @@ const isActive = (to: string) =>
     <footer class="border-t border-neutral-200 bg-neutral-50">
       <div class="mx-auto flex max-w-6xl flex-col items-start gap-2 px-4 py-6 text-xs text-neutral-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <p>ระบบสาธิตเพื่อการศึกษา — Blockchain ทำงานแบบ Local Simulation</p>
-        <p>โครงการวิชา Blockchain · ทีมพัฒนา 5 คน</p>
+        <div class="flex items-center gap-4">
+          <NuxtLink
+            to="/privacy"
+            class="rounded-md underline-offset-4 transition-colors hover:text-neutral-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+          >
+            นโยบายความเป็นส่วนตัว
+          </NuxtLink>
+          <p>โครงการวิชา Blockchain · ทีมพัฒนา 5 คน</p>
+        </div>
       </div>
     </footer>
   </div>

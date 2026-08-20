@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, ChevronDown, LayoutDashboard, LogOut, User } from '@lucide/vue'
+import { Check, ChevronDown, Home, LayoutDashboard, LogOut, User } from '@lucide/vue'
 import type { DashboardRole } from '~/composables/useDashboardNav'
 
 const role = useDemoRole()
@@ -41,10 +41,8 @@ const switchRole = async (next: DashboardRole) => {
   }
   role.value = next
   open.value = false
-  // ถ้าอยู่ในพื้นที่ dashboard ให้พาไปหน้าหลักของบทบาทใหม่
-  if (route.meta.layout === 'dashboard') {
-    await navigateTo(homeFor(next))
-  }
+  // สลับบทบาทแล้วพาไปหน้า dashboard ของบทบาทใหม่เสมอ
+  await navigateTo(homeFor(next))
 }
 
 // TODO(auth): ออกจากระบบจริงหลัง implement Phase Auth/RBAC
@@ -126,7 +124,17 @@ watch(
         @click="open = false"
       >
         <LayoutDashboard class="size-4 shrink-0" aria-hidden="true" />
-        หน้าหลัก
+        หน้า Dashboard
+      </NuxtLink>
+
+      <NuxtLink
+        data-menu-item
+        to="/"
+        class="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        @click="open = false"
+      >
+        <Home class="size-4 shrink-0" aria-hidden="true" />
+        หน้าเว็บหลัก
       </NuxtLink>
 
       <div class="my-1.5 border-t border-neutral-200" />
