@@ -77,6 +77,8 @@ description: Build, edit, or review Nuxt web interfaces using consistent coding 
 ## Tailwind CSS
 
 - ใช้ utility classes เป็นหลัก รวมถึง responsive variants และ `dark:` เมื่อโปรเจกต์รองรับ dark mode
+- นิยามสีแบรนด์และสถานะเป็น semantic token ที่ `app.config.ts` (เช่น `primary`, `secondary`, `success`, `warning`, `error`, `info`, `neutral`) และ map เป็น CSS variables ผ่าน `@theme inline` ใน global CSS แล้วเขียน utility แบบ semantic เช่น `bg-primary` / `text-error-700` / `border-warning-200` แทนชื่อ palette ตรง ๆ (`amber-600`); เปลี่ยนธีมทั้งระบบให้แก้ที่ config จุดเดียว — อย่า hard-code ชื่อ palette ใน template และอย่าให้สีของสถานะ (เช่น warning) กับสีแบรนด์ (primary) ชนกันจนแยกไม่ได้
+- กำหนด `cursor: pointer` ให้ปุ่มที่กดได้ทุกตัวผ่าน base layer ของ global CSS (เพราะ Tailwind v4 preflight ตั้ง button เป็น `cursor: default`) แทนการใส่ `cursor-pointer` รายปุ่ม; ยกเว้น `:disabled` เพื่อให้แสดง `not-allowed`/default ตาม utility ของจุดนั้น
 - ใช้ design tokens, theme variables และ utility pattern เดิมก่อน hard-coded arbitrary values
 - ใช้ `flex`, `grid`, `gap`, padding และ width constraints เพื่อแก้ layout ที่ต้นเหตุ
 - หลีกเลี่ยง inline styles และ custom CSS เมื่อ Tailwind ทำได้ชัดเจน
@@ -120,6 +122,10 @@ description: Build, edit, or review Nuxt web interfaces using consistent coding 
 - จัดกลุ่ม submenu ตาม mental model ของผู้ใช้และใช้ระดับ nesting เท่าที่จำเป็น
 - ซ่อนเมนูที่ไม่มี permission และอย่าแสดง dead menu
 - วาง user/help/logout ไว้ส่วนรองหรือด้านล่างเมื่อสอดคล้องกับระบบ
+- ทำ user menu เป็น dropdown — วางขวาบนของ header เมื่อต้องใช้ร่วมหลาย layout (public + dashboard) หรือที่ footer ของ sidebar เมื่อเป็น back-office ที่ header แน่น; เมนูเปิดลงด้านล่างเมื่ออยู่บน header และเปิดขึ้นด้านบนเมื่ออยู่ที่ footer; trigger ต้องมี `aria-expanded`, ปิดด้วย click-outside และ Escape, คืน focus ให้ trigger เมื่อปิด, ปิดอัตโนมัติเมื่อเปลี่ยนหน้า และใช้ component เดียวกันทุก layout เพื่อความสม่ำเสมอ
+- navbar ของหน้า public แบ่ง 3 โซน — ซ้าย logo/ชื่อเว็บ, กลาง menu หลัก, ขวาส่วน auth (ปุ่มเข้าสู่ระบบเมื่อยังไม่ login หรือ user menu เมื่อ login แล้ว) โดยแสดงสถานะตาม session จริง; บนจอแคบซ่อน menu กลางเป็น hamburger แต่คงส่วน auth ให้เข้าถึงได้เสมอ
+- ให้ header มีปุ่ม collapse/expand sidebar บน desktop เมื่อ sidebar เป็นโครงหลักของ layout; เก็บ state ผ่าน composable กลางเพื่อให้ sidebar, layout และ header ใช้ค่าเดียวกัน พร้อม transition width/padding ให้สอดคล้องกัน
+- เมื่อ sidebar ยุบเป็น icon-only ให้รักษา accessible name ของแต่ละเมนู (เช่น `sr-only` ตาม breakpoint หรือ `aria-label`) และเพิ่ม tooltip ช่วยการค้นพบ; ซ่อน badge หรือป้ายรองที่ไม่จำเป็นออกในโหมดยุบ
 - ใช้ sidebar search เฉพาะเมื่อจำนวนเมนูทำให้ค้นหายากจริง
 
 Responsive behavior:

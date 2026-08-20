@@ -38,7 +38,7 @@ docker compose up -d
 # 4. รัน database migration
 pnpm db:migrate
 
-# 5. เริ่ม dev server → http://localhost:3000
+# 5. เริ่ม dev server → http://localhost:3007
 pnpm dev
 ```
 
@@ -110,7 +110,10 @@ storage/
 ## ข้อตกลง UI ของทีม
 
 - Vue Composition API + `<script setup lang="ts">`
-- Tailwind CSS — accent สี `amber` (โทนไหมทอง), surface `neutral`
+- Tailwind CSS — สีทั้งระบบเป็น semantic token ที่นิยามใน `app/app.config.ts` เขียนเป็น `bg-primary` / `text-error-700` ห้าม hard-code ชื่อ palette (`amber-600`) โดยตรง
+  - `primary` amber (ไหมทอง) — action หลักของแบรนด์ · `secondary` stone — action รอง
+  - `success` emerald (อนุมัติ/ACTIVE/ACCEPTED) · `warning` orange (รอตรวจ/SUSPENDED) · `error` rose (ปฏิเสธ/REVOKED/ปุ่มทำลาย) · `info` cyan (Simulation/หมายเหตุ)
+  - `neutral` slate — surface และข้อความ (override palette neutral ของ Tailwind ให้มาจาก config)
 - Lucide icons เท่านั้น; icon-only button ต้องมี `aria-label`
 - ใช้ `useToast()` สำหรับผล action, `useConfirm()` สำหรับ action ที่ย้อนกลับยาก (จะ implement ใน Phase 2)
 - ห้ามใช้ browser `alert()`/`confirm()`

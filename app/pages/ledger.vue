@@ -7,15 +7,15 @@ useHead({ title: 'Blockchain Explorer' })
 <template>
   <div class="mx-auto max-w-4xl px-4 py-16 sm:px-6">
     <div class="text-center">
-      <span class="inline-flex size-12 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+      <span class="inline-flex size-12 items-center justify-center rounded-xl bg-primary-100 text-primary-700">
         <Blocks class="size-6" aria-hidden="true" />
       </span>
       <h1 class="mt-4 text-2xl font-bold text-neutral-900">Blockchain Explorer</h1>
       <p class="mt-2 text-sm leading-relaxed text-neutral-600">
         ดูรายการ Block, Validator, Hash และผลตรวจ Chain Integrity ของ Ledger
       </p>
-      <p class="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
-        <span class="size-1.5 rounded-full bg-amber-500" aria-hidden="true" />
+      <p class="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 px-3 py-1 text-xs font-medium text-primary-800">
+        <span class="size-1.5 rounded-full bg-primary-500" aria-hidden="true" />
         ข้อมูลทั้งหมดมาจาก Local Blockchain Simulation
       </p>
     </div>

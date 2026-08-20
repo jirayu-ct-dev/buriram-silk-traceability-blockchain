@@ -4,6 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  // เลี่ยงชนกับแอปอื่นบนเครื่องที่ใช้ port 3000 (เช่น docker ของโปรเจกต์อื่น)
+  devServer: { port: 3007 },
   modules: [
     'nuxt-auth-utils',
     '@nuxt/eslint'

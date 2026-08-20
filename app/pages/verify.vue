@@ -7,7 +7,7 @@ useHead({ title: 'ตรวจสอบใบรับรอง' })
 <template>
   <div class="mx-auto max-w-2xl px-4 py-16 sm:px-6">
     <div class="text-center">
-      <span class="inline-flex size-12 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+      <span class="inline-flex size-12 items-center justify-center rounded-xl bg-primary-100 text-primary-700">
         <QrCode class="size-6" aria-hidden="true" />
       </span>
       <h1 class="mt-4 text-2xl font-bold text-neutral-900">ตรวจสอบใบรับรอง</h1>

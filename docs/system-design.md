@@ -853,9 +853,9 @@ https://example.org/certificate/{certificateId}
 ไฟล์ `.env.example` ต้องมีเฉพาะชื่อและค่าตัวอย่าง ห้าม Commit Secret จริง:
 
 ```text
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/buriram_silk
+DATABASE_URL=postgresql://postgres:postgres@localhost:5437/buriram_silk
 NUXT_SESSION_PASSWORD=replace-with-at-least-32-characters
-NUXT_PUBLIC_APP_BASE_URL=http://localhost:3000
+NUXT_PUBLIC_APP_BASE_URL=http://localhost:3007
 UPLOAD_DIR=./storage/uploads
 VALIDATOR_KEY_DIR=./storage/validator-keys
 ```

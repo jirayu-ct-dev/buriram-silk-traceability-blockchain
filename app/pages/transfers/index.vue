@@ -9,7 +9,7 @@ useHead({ title: 'การส่งมอบ' })
 <template>
   <div class="mx-auto max-w-4xl">
     <div class="flex items-center gap-3">
-      <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 lg:hidden">
+      <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-700 lg:hidden">
         <ArrowLeftRight class="size-5" aria-hidden="true" />
       </span>
       <div>

@@ -2,6 +2,7 @@
 import { Menu, X } from '@lucide/vue'
 
 const route = useRoute()
+const role = useDemoRole()
 const mobileMenuOpen = ref(false)
 
 watch(
@@ -25,12 +26,12 @@ const isActive = (to: string) =>
 <template>
   <div class="flex min-h-screen flex-col bg-white">
     <header class="sticky top-0 z-40 border-b border-neutral-200 bg-white/95 backdrop-blur">
-      <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div class="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
         <NuxtLink
           to="/"
-          class="flex items-center gap-2.5 rounded-md py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600"
+          class="flex shrink-0 items-center gap-2.5 rounded-md py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          <span class="flex size-8 items-center justify-center rounded-lg bg-amber-100 text-sm font-bold text-amber-700">
+          <span class="flex size-8 items-center justify-center rounded-lg bg-primary-100 text-sm font-bold text-primary-700">
             ไหม
           </span>
           <span class="hidden text-sm font-semibold text-neutral-900 sm:block">
@@ -38,15 +39,15 @@ const isActive = (to: string) =>
           </span>
         </NuxtLink>
 
-        <nav class="hidden items-center gap-1 md:flex" aria-label="เมนูหลัก">
+        <nav class="hidden flex-1 items-center justify-center gap-1 md:flex" aria-label="เมนูหลัก">
           <NuxtLink
             v-for="link in NAV_LINKS"
             :key="link.to"
             :to="link.to"
-            class="rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600"
+            class="rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             :class="
               isActive(link.to)
-                ? 'bg-amber-50 text-amber-800'
+                ? 'bg-primary-50 text-primary-800'
                 : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
             "
             :aria-current="isActive(link.to) ? 'page' : undefined"
@@ -55,17 +56,28 @@ const isActive = (to: string) =>
           </NuxtLink>
         </nav>
 
-        <button
-          type="button"
-          class="rounded-lg p-2 text-neutral-600 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 md:hidden"
-          :aria-expanded="mobileMenuOpen"
-          aria-controls="public-mobile-menu"
-          :aria-label="mobileMenuOpen ? 'ปิดเมนู' : 'เปิดเมนู'"
-          @click="mobileMenuOpen = !mobileMenuOpen"
-        >
-          <X v-if="mobileMenuOpen" class="size-5" aria-hidden="true" />
-          <Menu v-else class="size-5" aria-hidden="true" />
-        </button>
+        <div class="ml-auto flex shrink-0 items-center gap-2">
+          <UiAppUserMenu v-if="role" />
+          <NuxtLink
+            v-else
+            to="/login"
+            class="inline-flex items-center rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            เข้าสู่ระบบ
+          </NuxtLink>
+
+          <button
+            type="button"
+            class="rounded-lg p-2 text-neutral-600 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:hidden"
+            :aria-expanded="mobileMenuOpen"
+            aria-controls="public-mobile-menu"
+            :aria-label="mobileMenuOpen ? 'ปิดเมนู' : 'เปิดเมนู'"
+            @click="mobileMenuOpen = !mobileMenuOpen"
+          >
+            <X v-if="mobileMenuOpen" class="size-5" aria-hidden="true" />
+            <Menu v-else class="size-5" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       <nav
@@ -78,10 +90,10 @@ const isActive = (to: string) =>
           <li v-for="link in NAV_LINKS" :key="link.to">
             <NuxtLink
               :to="link.to"
-              class="block rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600"
+              class="block rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               :class="
                 isActive(link.to)
-                  ? 'bg-amber-50 text-amber-800'
+                  ? 'bg-primary-50 text-primary-800'
                   : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
               "
               :aria-current="isActive(link.to) ? 'page' : undefined"

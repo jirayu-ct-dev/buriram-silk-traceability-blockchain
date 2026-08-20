@@ -1,5 +1,113 @@
 @import "tailwindcss";
 
+/* Token สีแบบ semantic — ค่าจริงมาจาก app.config.ts (inject เป็น --ui-{name}-{shade} ที่ app.vue)
+   ใช้ inline เพื่อให้ utility อย่าง bg-primary อ้างอิงตัวแปรโดยตรง
+   ชื่อไม่มีเลข shade (เช่น bg-primary) = ระดับ 600
+   หมายเหตุ: ชุด neutral override palette เดิมของ Tailwind ให้ชี้มาที่ config */
+@theme inline {
+  --color-primary: var(--ui-primary-600);
+  --color-primary-50: var(--ui-primary-50);
+  --color-primary-100: var(--ui-primary-100);
+  --color-primary-200: var(--ui-primary-200);
+  --color-primary-300: var(--ui-primary-300);
+  --color-primary-400: var(--ui-primary-400);
+  --color-primary-500: var(--ui-primary-500);
+  --color-primary-600: var(--ui-primary-600);
+  --color-primary-700: var(--ui-primary-700);
+  --color-primary-800: var(--ui-primary-800);
+  --color-primary-900: var(--ui-primary-900);
+  --color-primary-950: var(--ui-primary-950);
+
+  --color-secondary: var(--ui-secondary-600);
+  --color-secondary-50: var(--ui-secondary-50);
+  --color-secondary-100: var(--ui-secondary-100);
+  --color-secondary-200: var(--ui-secondary-200);
+  --color-secondary-300: var(--ui-secondary-300);
+  --color-secondary-400: var(--ui-secondary-400);
+  --color-secondary-500: var(--ui-secondary-500);
+  --color-secondary-600: var(--ui-secondary-600);
+  --color-secondary-700: var(--ui-secondary-700);
+  --color-secondary-800: var(--ui-secondary-800);
+  --color-secondary-900: var(--ui-secondary-900);
+  --color-secondary-950: var(--ui-secondary-950);
+
+  --color-success: var(--ui-success-600);
+  --color-success-50: var(--ui-success-50);
+  --color-success-100: var(--ui-success-100);
+  --color-success-200: var(--ui-success-200);
+  --color-success-300: var(--ui-success-300);
+  --color-success-400: var(--ui-success-400);
+  --color-success-500: var(--ui-success-500);
+  --color-success-600: var(--ui-success-600);
+  --color-success-700: var(--ui-success-700);
+  --color-success-800: var(--ui-success-800);
+  --color-success-900: var(--ui-success-900);
+  --color-success-950: var(--ui-success-950);
+
+  --color-info: var(--ui-info-600);
+  --color-info-50: var(--ui-info-50);
+  --color-info-100: var(--ui-info-100);
+  --color-info-200: var(--ui-info-200);
+  --color-info-300: var(--ui-info-300);
+  --color-info-400: var(--ui-info-400);
+  --color-info-500: var(--ui-info-500);
+  --color-info-600: var(--ui-info-600);
+  --color-info-700: var(--ui-info-700);
+  --color-info-800: var(--ui-info-800);
+  --color-info-900: var(--ui-info-900);
+  --color-info-950: var(--ui-info-950);
+
+  --color-warning: var(--ui-warning-600);
+  --color-warning-50: var(--ui-warning-50);
+  --color-warning-100: var(--ui-warning-100);
+  --color-warning-200: var(--ui-warning-200);
+  --color-warning-300: var(--ui-warning-300);
+  --color-warning-400: var(--ui-warning-400);
+  --color-warning-500: var(--ui-warning-500);
+  --color-warning-600: var(--ui-warning-600);
+  --color-warning-700: var(--ui-warning-700);
+  --color-warning-800: var(--ui-warning-800);
+  --color-warning-900: var(--ui-warning-900);
+  --color-warning-950: var(--ui-warning-950);
+
+  --color-error: var(--ui-error-600);
+  --color-error-50: var(--ui-error-50);
+  --color-error-100: var(--ui-error-100);
+  --color-error-200: var(--ui-error-200);
+  --color-error-300: var(--ui-error-300);
+  --color-error-400: var(--ui-error-400);
+  --color-error-500: var(--ui-error-500);
+  --color-error-600: var(--ui-error-600);
+  --color-error-700: var(--ui-error-700);
+  --color-error-800: var(--ui-error-800);
+  --color-error-900: var(--ui-error-900);
+  --color-error-950: var(--ui-error-950);
+
+  --color-neutral: var(--ui-neutral-600);
+  --color-neutral-50: var(--ui-neutral-50);
+  --color-neutral-100: var(--ui-neutral-100);
+  --color-neutral-200: var(--ui-neutral-200);
+  --color-neutral-300: var(--ui-neutral-300);
+  --color-neutral-400: var(--ui-neutral-400);
+  --color-neutral-500: var(--ui-neutral-500);
+  --color-neutral-600: var(--ui-neutral-600);
+  --color-neutral-700: var(--ui-neutral-700);
+  --color-neutral-800: var(--ui-neutral-800);
+  --color-neutral-900: var(--ui-neutral-900);
+  --color-neutral-950: var(--ui-neutral-950);
+}
+
+
+/* Tailwind v4 preflight ตั้ง button เป็น cursor: default
+   ปุ่มที่กดได้ทุกตัวควรเป็น pointer; ปุ่ม disabled ไม่รวมเพื่อให้แสดง not-allowed/default ตาม utility ของแต่ละจุด */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+}
+
 /* Full-height hero: fills the viewport below the navbar (h-16 = 4rem).
    dvh tracks the dynamic viewport on mobile browsers; vh is the fallback. */
 @utility min-h-hero {

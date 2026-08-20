@@ -49,7 +49,7 @@ const SECTIONS = [
         class="rounded-xl border border-neutral-200 bg-white p-6"
       >
         <div class="flex items-center gap-3">
-          <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+          <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-700">
             <component :is="section.icon" class="size-5" aria-hidden="true" />
           </span>
           <h2 class="font-semibold text-neutral-900">
@@ -62,7 +62,7 @@ const SECTIONS = [
             :key="point"
             class="flex gap-2.5 text-sm leading-relaxed text-neutral-600"
           >
-            <span class="mt-2 size-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden="true" />
+            <span class="mt-2 size-1.5 shrink-0 rounded-full bg-primary-500" aria-hidden="true" />
             {{ point }}
           </li>
         </ul>

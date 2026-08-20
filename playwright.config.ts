@@ -5,11 +5,11 @@ export default defineConfig({
   timeout: 30_000,
   retries: process.env.CI ? 1 : 0,
   use: {
-    baseURL: process.env.NUXT_PUBLIC_APP_BASE_URL ?? 'http://localhost:3000',
+    baseURL: process.env.NUXT_PUBLIC_APP_BASE_URL ?? 'http://localhost:3007',
   },
   webServer: {
     command: 'pnpm dev',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:3007',
     reuseExistingServer: true,
     timeout: 120_000,
   },
