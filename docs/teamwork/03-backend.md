@@ -1,4 +1,6 @@
-# 03 — บทบาท: Backend (API ทั้งระบบ + Auth + Seed)
+# 03 — นักพัฒนา Backend (Backend Developer)
+
+> **หน้าที่ใน 1 ประโยค:** สร้าง API ทุก endpoint พร้อมระบบยืนยันตัวตนและสิทธิ์การใช้งาน (Auth/RBAC) ให้ปลอดภัยทุกชั้น และเตรียมข้อมูลตัวอย่าง (seed) ให้พร้อมสาธิต
 
 > **ให้ AI agent อ่านก่อน:** `AGENTS.md` → skill `web-ui-coding-standards` → `docs/teamwork/00-shared-contract.md` (สัญญากลาง) → ไฟล์นี้
 > อ้างอิงหลัก: `docs/system-design.md` §5.5 (API contract — ทำตามเป๊ะ), §6 (flows), §7 (state models), §11 (pseudo-code = business rules), §14.4 (auth), §21 (seed)

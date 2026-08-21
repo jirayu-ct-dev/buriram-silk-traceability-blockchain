@@ -108,14 +108,14 @@ storage/
 > **แผนงานฉบับเต็ม:** โฟลเดอร์ [`docs/teamwork/`](docs/teamwork/) — แยกเป็น brief รายคน ใช้ต่อกับ AI agent ได้เลยจนจบ
 > **วิธีใช้:** แจกไฟล์ของแต่ละคน (01–04) ให้เพื่อนบอก AI agent ว่า "อ่าน `AGENTS.md` → skill `web-ui-coding-standards` → `docs/teamwork/00-shared-contract.md` → ไฟล์ brief ของตัวเอง แล้วทำตาม checklist" — ทุกคนทำงานบน branch ตัวเอง แล้ว PM รวมตามคู่มือ `05-pm-integration.md`
 
-| ไฟล์ brief | บทบาท | ขอบเขตหลัก |
+| ไฟล์ brief | ตำแหน่ง | หน้าที่ (1 ประโยค) |
 |---|---|---|
 | `00-shared-contract.md` | ทุกคน | สัญญากลาง: contract A/B/C, แผนที่ความเป็นเจ้าของไฟล์, กติกา |
-| `01-docs.md` | สมาชิก 1 | รายงาน + สไลด์ + references ทั้งหมด + หน้า about/privacy |
-| `02-frontend.md` | สมาชิก 2 | หน้าจริงทุกหน้า + useToast/useConfirm + shared UI |
-| `03-backend.md` | สมาชิก 3 | API ทุก endpoint + auth/RBAC + seed |
-| `04-blockchain-qa.md` | สมาชิก 4 | Ledger Simulator (SHA-256/Ed25519/PoA) + QA ระบบท้ายโครงการ |
-| `05-pm-integration.md` | PM (คุณ) | ลำดับ merge, ตรวจ conflict, Quality Gate, Demo Day |
+| `01-docs.md` | นักวิเคราะห์ธุรกิจ และ ผู้รับผิดชอบเอกสาร | วิเคราะห์ปัญหาธุรกิจ ผู้เกี่ยวข้อง และกระบวนการทำงาน แล้วสื่อสารเป็นรายงาน สไลด์ และหน้าเว็บเนื้อหาให้ครบตามเกณฑ์ของอาจารย์ |
+| `02-frontend.md` | นักพัฒนา Frontend | สร้างหน้าเว็บทุกหน้าให้ใช้งานได้จริงครบทุกสถานะ พร้อม shared UI ที่ทั้งทีมใช้ โดยต่อกับ API ของ Backend |
+| `03-backend.md` | นักพัฒนา Backend | สร้าง API ทุก endpoint พร้อมระบบยืนยันตัวตนและสิทธิ์การใช้งาน ให้ปลอดภัยทุกชั้น และเตรียมข้อมูลตัวอย่างให้พร้อมสาธิต |
+| `04-blockchain-qa.md` | วิศวกรบล็อกเชน และ ผู้ทดสอบระบบ | สร้าง Ledger Simulator ที่พิสูจน์ความถูกต้องได้ และทดสอบระบบทั้งหมดก่อนส่งมอบเพื่อการันตีคุณภาพ |
+| `05-pm-integration.md` | หัวหน้าโครงการ | วางแผนและประสานงานทั้งทีม ตรวจรับและรวมงานทุกส่วนให้ระบบรันได้จริงในคำสั่งเดียว ควบคุมคุณภาพถึงวันนำเสนอ |
 
 **ลำดับการทำงาน (Build Order):** ตาม `docs/system-design.md` §19 — Foundation → Shared UI → Auth/RBAC → Silk Item Workflow → Ledger Simulator → Certification → Certificate Status/Custody → Blockchain Explorer → Quality Gate → Demo
 

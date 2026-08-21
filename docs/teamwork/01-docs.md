@@ -1,4 +1,6 @@
-# 01 — บทบาท: เอกสารทั้งหมด (Docs) + หน้าเว็บเนื้อหา
+# 01 — นักวิเคราะห์ธุรกิจ และ ผู้รับผิดชอบเอกสาร (Business Analyst & Documentation Lead)
+
+> **หน้าที่ใน 1 ประโยค:** วิเคราะห์ปัญหาธุรกิจ ผู้เกี่ยวข้อง และกระบวนการทำงานของระบบ แล้วสื่อสารเป็นรายงาน สไลด์ และหน้าเว็บเนื้อหาให้ครบตามเกณฑ์ของอาจารย์
 
 > **ให้ AI agent อ่านก่อน:** `AGENTS.md` → skill `web-ui-coding-standards` → `docs/teamwork/00-shared-contract.md` (สัญญากลาง) → ไฟล์นี้
 > อ้างอิงหลัก: `docs/project-understanding.md` (ข้อกำหนด/กติกา/rubric ของอาจารย์) และ `docs/system-design.md`

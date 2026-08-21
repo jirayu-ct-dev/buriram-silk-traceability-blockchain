@@ -1,4 +1,6 @@
-# 04 — บทบาท: Blockchain Engine + QA (แกนวิชา + คุณภาพระบบ)
+# 04 — วิศวกรบล็อกเชน และ ผู้ทดสอบระบบ (Blockchain Engineer & QA Engineer)
+
+> **หน้าที่ใน 1 ประโยค:** สร้าง Ledger Simulator (SHA-256 Hash Chain + Ed25519 + PoA) ที่พิสูจน์ความถูกต้องได้ และทดสอบระบบทั้งหมดก่อนส่งมอบเพื่อการันตีคุณภาพ
 
 > **ให้ AI agent อ่านก่อน:** `AGENTS.md` → skill `web-ui-coding-standards` → `docs/teamwork/00-shared-contract.md` (สัญญากลาง) → ไฟล์นี้
 > อ้างอิงหลัก: `docs/system-design.md` §8 (Consortium + PoA), §10.4–10.7 (ledger data design), §16 (Nuxt implementation), §22 (Definition of Done)

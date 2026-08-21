@@ -1,4 +1,6 @@
-# 02 — บทบาท: Frontend (ทุกหน้าจริง + Shared UI)
+# 02 — นักพัฒนา Frontend (Frontend Developer)
+
+> **หน้าที่ใน 1 ประโยค:** สร้างหน้าเว็บทุกหน้าให้ใช้งานได้จริงครบทุกสถานะ พร้อม shared UI (toast/confirm/badge) ที่ทั้งทีมใช้ โดยต่อกับ API ของ Backend
 
 > **ให้ AI agent อ่านก่อน:** `AGENTS.md` → skill `web-ui-coding-standards` → `docs/teamwork/00-shared-contract.md` (สัญญากลาง) → ไฟล์นี้
 > อ้างอิงหลัก: `docs/system-design.md` §5.1–5.3 (routes/UI standards), §6 (flows), §12 (public verification result), §13 (QR design)
