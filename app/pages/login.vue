@@ -1,64 +1,92 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { ArrowLeft, Eye, EyeOff, ClipboardCheck, Spool, Store } from '@lucide/vue'
 import { markRaw, type Component } from 'vue'
-import { ArrowLeft, ClipboardCheck, Spool, Store } from '@lucide/vue'
 import type { DashboardRole } from '~/composables/useDashboardNav'
+import { useAuthSession } from '~/composables/useAuthSession'
+import { useToast } from '~/composables/useToast'
 
 definePageMeta({ layout: false })
 
 useHead({ title: 'เข้าสู่ระบบ' })
 
-const { signIn: apiSignIn } = useAuthSession()
+const { signIn, homeFor } = useAuthSession()
+const toast = useToast()
 
-const ACTORS: { role: DashboardRole, label: string, description: string, icon: Component }[] = [
+const DEMO_PASSWORD = 'password'
+
+const ACTORS: { role: DashboardRole, label: string, description: string, icon: Component, demoEmail: string }[] = [
   {
     role: 'WEAVER',
     label: 'ช่างทอ',
     description: 'ลงทะเบียนผ้าไหม แนบหลักฐาน และติดตามผลการตรวจ',
     icon: markRaw(Spool),
+    demoEmail: 'weaver1@example.com',
   },
   {
     role: 'COOPERATIVE_OFFICER',
     label: 'เจ้าหน้าที่สหกรณ์',
     description: 'ตรวจคำขอ อนุมัติ และจัดการใบรับรอง',
     icon: markRaw(ClipboardCheck),
+    demoEmail: 'officer1@example.com',
   },
   {
     role: 'STORE_USER',
     label: 'ร้านค้า',
     description: 'ยืนยันการรับส่งมอบและดูแลสินค้าที่รับผิดชอบ',
     icon: markRaw(Store),
+    demoEmail: 'store1@example.com',
   },
 ]
 
-const pending = ref<DashboardRole | null>(null)
+const form = ref({
+  username: '',
+  password: '',
+})
 
-const DEMO_EMAILS: Record<DashboardRole, string> = {
-  WEAVER: 'weaver1@example.com',
-  COOPERATIVE_OFFICER: 'officer1@example.com',
-  STORE_USER: 'store1@example.com',
+const errors = ref<Record<string, string>>({})
+const isSubmitting = ref(false)
+const showPassword = ref(false)
+
+const validateForm = () => {
+  errors.value = {}
+  if (!form.value.username.trim()) {
+    errors.value.username = 'กรุณากรอกชื่อผู้ใช้'
+  }
+  if (!form.value.password) {
+    errors.value.password = 'กรุณากรอกรหัสผ่าน'
+  }
+  return Object.keys(errors.value).length === 0
 }
 
-const signIn = async (next: DashboardRole) => {
-  if (pending.value) return
-  pending.value = next
+const handleSubmit = async () => {
+  if (!validateForm()) return
+
+  isSubmitting.value = true
+
   try {
-    const email = DEMO_EMAILS[next]
-    const user = await apiSignIn({
-      username: email,
-      password: 'password',
-    })
-    await navigateTo(useAuthSession().homeFor(user.role))
-  } catch (error) {
-    console.error('Login failed:', error)
-    const toast = useToast()
-    toast.add({
-      title: 'เข้าสู่ระบบไม่สำเร็จ',
-      description: 'กรุณาตรวจสอบว่ามีข้อมูลผู้ใช้งานในระบบหรือรัน seed หรือยัง',
-      color: 'error',
-    })
+    const user = await signIn({ username: form.value.username.trim(), password: form.value.password })
+    toast.success('เข้าสู่ระบบสำเร็จ')
+    await navigateTo(homeFor(user.role))
+  } catch (error: unknown) {
+    const err = error as { data?: { message?: string } }
+    const message = err.data?.message ?? 'อีเมลหรือรหัสผ่านไม่ถูกต่อง'
+    errors.value.form = message
+    toast.error(message)
   } finally {
-    pending.value = null
+    isSubmitting.value = false
   }
+}
+
+const handleDemoLogin = async (actor: typeof ACTORS[number]) => {
+  form.value.username = actor.demoEmail
+  form.value.password = DEMO_PASSWORD
+  await handleSubmit()
+}
+
+const getInputValue = (event: Event): string => {
+  const target = event.target as HTMLInputElement
+  return target?.value ?? ''
 }
 </script>
 
@@ -77,32 +105,100 @@ const signIn = async (next: DashboardRole) => {
           </NuxtLink>
           <div>
             <h1 class="text-xl font-semibold text-neutral-900">เข้าสู่ระบบ</h1>
-            <p class="mt-1 text-sm text-neutral-600">เลือกบทบาทเพื่อเข้าสู่ระบบ</p>
+            <p class="mt-1 text-sm text-neutral-600">กรอกชื่อผู้ใช้และรหัสผ่านเพื่อเข้าสู่ระบบ</p>
           </div>
         </div>
 
-        <ul class="space-y-3">
-          <li v-for="actor in ACTORS" :key="actor.role">
-            <button
-              type="button"
-              class="flex w-full items-center gap-4 rounded-xl border border-neutral-200 bg-white p-4 text-left transition-colors hover:border-primary-300 hover:bg-primary-50/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
-              :disabled="pending !== null"
-              @click="signIn(actor.role)"
-            >
-              <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-700">
-                <component :is="actor.icon" class="size-5" aria-hidden="true" />
-              </span>
-              <span class="min-w-0">
-                <span class="block text-sm font-semibold text-neutral-900">{{ actor.label }}</span>
-                <span class="mt-0.5 block text-xs leading-relaxed text-neutral-500">{{ actor.description }}</span>
-              </span>
-            </button>
-          </li>
-        </ul>
+        <form @submit.prevent="handleSubmit" class="space-y-4" novalidate>
+          <div>
+            <label for="username" class="block text-sm font-medium text-neutral-700">ชื่อผู้ใช้</label>
+            <input
+              id="username"
+              v-model="form.username"
+              @input="form.username = getInputValue($event); errors.form && delete errors.form"
+              type="text"
+              autocomplete="username"
+              placeholder="เช่น weaver1@example.com"
+              class="mt-1.5 w-full rounded-lg border px-3 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-neutral-100 transition-colors"
+              :class="{ 'border-error-500': errors.username || errors.form, 'border-neutral-300': !errors.username && !errors.form }"
+              :aria-invalid="(errors.username || errors.form) ? 'true' : 'false'"
+              :aria-describedby="errors.username ? 'username-error' : (errors.form ? 'form-error' : undefined)"
+              :disabled="isSubmitting"
+              required
+            />
+            <p v-if="errors.username" id="username-error" class="mt-1.5 text-xs leading-relaxed text-error-700" role="alert">
+              {{ errors.username }}
+            </p>
+          </div>
 
-        <p class="mt-4 text-center text-xs text-neutral-500">
-          โหมดตัวอย่าง — เข้าสู่ระบบในบทบาทที่เลือกทันที ระบบยืนยันตัวตนจริงจะเปิดใช้งานใน Phase Auth/RBAC
-        </p>
+          <div>
+            <label for="password" class="block text-sm font-medium text-neutral-700">รหัสผ่าน</label>
+            <div class="relative">
+              <input
+                id="password"
+                v-model="form.password"
+                @input="form.password = getInputValue($event); errors.form && delete errors.form"
+                :type="showPassword ? 'text' : 'password'"
+                autocomplete="current-password"
+                placeholder="รหัสผ่าน"
+                class="mt-1.5 w-full rounded-lg border px-3 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-neutral-100 transition-colors pr-12"
+                :class="{ 'border-error-500': errors.password || errors.form, 'border-neutral-300': !errors.password && !errors.form }"
+                :aria-invalid="(errors.password || errors.form) ? 'true' : 'false'"
+                :aria-describedby="errors.password ? 'password-error' : (errors.form ? 'form-error' : undefined)"
+                :disabled="isSubmitting"
+                required
+              />
+              <button
+                type="button"
+                @click="showPassword = !showPassword"
+                class="absolute right-3 top-[calc(50%+1.5rem)] -translate-y-1/2 text-neutral-400 hover:text-neutral-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                aria-label="แสดง/ซ่อนรหัสผ่าน"
+              >
+                <component :is="showPassword ? EyeOff : Eye" class="size-5" aria-hidden="true" />
+              </button>
+            </div>
+            <p v-if="errors.password" id="password-error" class="mt-1.5 text-xs leading-relaxed text-error-700" role="alert">
+              {{ errors.password }}
+            </p>
+            <p v-if="errors.form" id="form-error" class="mt-1.5 text-xs leading-relaxed text-error-700" role="alert">
+              {{ errors.form }}
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            :disabled="isSubmitting"
+            class="w-full inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span v-if="isSubmitting" class="flex items-center gap-2">
+              <svg class="animate-spin size-4" viewBox="0 0 24 24" aria-hidden="true">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              กำลังเข้าสู่ระบบ...
+            </span>
+            <span v-else>เข้าสู่ระบบ</span>
+          </button>
+        </form>
+
+        <div class="mt-6 rounded-lg border border-neutral-200 bg-white p-4">
+          <p class="text-xs font-medium text-neutral-700 mb-3">บัญชีตัวอย่าง (Demo Accounts) — คลิกเพื่อเข้าสู่ระบบทันที:</p>
+          <ul class="space-y-2">
+            <li v-for="actor in ACTORS" :key="actor.role">
+              <button type="button" class="flex w-full items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-left text-xs text-neutral-600 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" @click="handleDemoLogin(actor)">
+                <span class="flex size-6 shrink-0 items-center justify-center rounded bg-primary-100 text-primary-700">
+                  <component :is="actor.icon" class="size-3.5" aria-hidden="true" />
+                </span>
+                <span class="font-medium text-neutral-900">{{ actor.label }}</span>
+                <span class="text-neutral-400">|</span>
+                <code class="flex-1 bg-neutral-100 px-2 py-0.5 rounded text-neutral-700 font-mono">{{ actor.demoEmail }}</code>
+                <span class="text-neutral-400">/</span>
+                <code class="bg-neutral-100 px-2 py-0.5 rounded text-neutral-700 font-mono">password</code>
+              </button>
+            </li>
+          </ul>
+          <p class="mt-2 text-[11px] text-neutral-500">หรือกรอกอีเมลและรหัสผ่านด้วยตัวเองด้านบน</p>
+        </div>
 
         <NuxtLink
           to="/"
