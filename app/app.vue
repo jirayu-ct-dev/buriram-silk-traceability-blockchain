@@ -26,5 +26,8 @@ useHead({
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
+    <!-- Feedback layer กลาง — mount ครั้งเดียวที่นี่ (brief Phase 1.1/1.2) -->
+    <UiAppToast />
+    <UiAppConfirmDialog />
   </div>
 </template>
