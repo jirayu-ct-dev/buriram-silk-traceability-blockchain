@@ -8,7 +8,7 @@ export default defineConfig({
     baseURL: process.env.NUXT_PUBLIC_APP_BASE_URL ?? 'http://localhost:3007',
   },
   webServer: {
-    command: 'pnpm dev',
+    command: 'pnpm.cmd dev',
     url: 'http://localhost:3007',
     reuseExistingServer: true,
     timeout: 120_000,

@@ -1,20 +1,8 @@
 <script setup lang="ts">
-import { Check, ChevronDown, Home, LayoutDashboard, LogOut, User } from '@lucide/vue'
-import type { DashboardRole } from '~/composables/useDashboardNav'
+import { ChevronDown, Home, LayoutDashboard, LogOut, User } from '@lucide/vue'
 
-const role = useDemoRole()
-const { homeFor } = useDashboardNav()
+const { user, signOut, homeFor, signIn: apiSignIn } = useAuthSession()
 const route = useRoute()
-
-const ROLE_OPTIONS: { value: DashboardRole, label: string }[] = [
-  { value: 'WEAVER', label: 'ช่างทอ' },
-  { value: 'COOPERATIVE_OFFICER', label: 'เจ้าหน้าที่สหกรณ์' },
-  { value: 'STORE_USER', label: 'ร้านค้า' },
-]
-
-const currentRoleLabel = computed(
-  () => ROLE_OPTIONS.find(option => option.value === role.value)?.label ?? '',
-)
 
 const open = ref(false)
 const rootRef = useTemplateRef<HTMLElement>('rootRef')
@@ -32,24 +20,6 @@ const toggle = () => {
 const close = () => {
   open.value = false
   triggerRef.value?.focus()
-}
-
-const switchRole = async (next: DashboardRole) => {
-  if (next === role.value) {
-    close()
-    return
-  }
-  role.value = next
-  open.value = false
-  // สลับบทบาทแล้วพาไปหน้า dashboard ของบทบาทใหม่เสมอ
-  await navigateTo(homeFor(next))
-}
-
-// TODO(auth): ออกจากระบบจริงหลัง implement Phase Auth/RBAC
-const signOut = async () => {
-  role.value = null
-  open.value = false
-  await navigateTo('/')
 }
 
 const onPointerDown = (event: PointerEvent) => {
@@ -87,10 +57,28 @@ watch(
     open.value = false
   },
 )
+
+const switchRole = async (role: 'WEAVER' | 'COOPERATIVE_OFFICER' | 'STORE_USER') => {
+  const DEMO_EMAILS = {
+    WEAVER: 'weaver1@example.com',
+    COOPERATIVE_OFFICER: 'officer1@example.com',
+    STORE_USER: 'store1@example.com',
+  }
+  try {
+    const newUser = await apiSignIn({
+      username: DEMO_EMAILS[role],
+      password: 'password',
+    })
+    open.value = false
+    await navigateTo(homeFor(newUser.role))
+  } catch (error) {
+    console.error('Role switch failed:', error)
+  }
+}
 </script>
 
 <template>
-  <div v-if="role" ref="rootRef" class="relative">
+  <div v-if="user" ref="rootRef" class="relative">
     <button
       ref="triggerRef"
       type="button"
@@ -103,8 +91,8 @@ watch(
         <User class="size-4" aria-hidden="true" />
       </span>
       <span class="hidden text-left text-xs leading-tight sm:block">
-        <span class="block font-medium text-neutral-900">ผู้ใช้ตัวอย่าง</span>
-        <span class="block text-neutral-500">{{ currentRoleLabel }}</span>
+        <span class="block font-medium text-neutral-900">{{ user.displayName }}</span>
+        <span class="block text-neutral-500 text-[10px]">{{ user.organizationName || (user.role === 'WEAVER' ? 'ช่างทอ' : user.role === 'COOPERATIVE_OFFICER' ? 'เจ้าหน้าที่สหกรณ์' : 'ร้านค้า') }}</span>
       </span>
       <ChevronDown
         class="size-4 shrink-0 text-neutral-400 transition-transform"
@@ -119,7 +107,7 @@ watch(
     >
       <NuxtLink
         data-menu-item
-        :to="homeFor(role)"
+        :to="homeFor(user.role)"
         class="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         @click="open = false"
       >
@@ -137,23 +125,40 @@ watch(
         หน้าเว็บหลัก
       </NuxtLink>
 
+      <!-- Demo role switching -->
       <div class="my-1.5 border-t border-neutral-200" />
+      <div class="px-3 py-1 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+        สลับบทบาท (Demo)
+      </div>
 
-      <p class="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
-        สลับบทบาท
-      </p>
       <button
-        v-for="option in ROLE_OPTIONS"
-        :key="option.value"
+        v-if="user.role !== 'WEAVER'"
         data-menu-item
         type="button"
-        class="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        :class="option.value === role ? 'font-medium text-primary-700' : 'text-neutral-700'"
-        @click="switchRole(option.value)"
+        class="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-pointer text-left"
+        @click="switchRole('WEAVER')"
       >
-        <Check v-if="option.value === role" class="size-4 shrink-0" aria-hidden="true" />
-        <span v-else class="size-4 shrink-0" aria-hidden="true" />
-        {{ option.label }}
+        ช่างทอ
+      </button>
+
+      <button
+        v-if="user.role !== 'COOPERATIVE_OFFICER'"
+        data-menu-item
+        type="button"
+        class="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-pointer text-left"
+        @click="switchRole('COOPERATIVE_OFFICER')"
+      >
+        เจ้าหน้าที่สหกรณ์
+      </button>
+
+      <button
+        v-if="user.role !== 'STORE_USER'"
+        data-menu-item
+        type="button"
+        class="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-pointer text-left"
+        @click="switchRole('STORE_USER')"
+      >
+        ร้านค้า
       </button>
 
       <div class="my-1.5 border-t border-neutral-200" />
@@ -161,7 +166,7 @@ watch(
       <button
         data-menu-item
         type="button"
-        class="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        class="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-pointer text-left"
         @click="signOut"
       >
         <LogOut class="size-4 shrink-0" aria-hidden="true" />

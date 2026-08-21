@@ -7,8 +7,7 @@ definePageMeta({ layout: false })
 
 useHead({ title: 'เข้าสู่ระบบ' })
 
-const role = useDemoRole()
-const { homeFor } = useDashboardNav()
+const { signIn: apiSignIn } = useAuthSession()
 
 const ACTORS: { role: DashboardRole, label: string, description: string, icon: Component }[] = [
   {
@@ -31,14 +30,35 @@ const ACTORS: { role: DashboardRole, label: string, description: string, icon: C
   },
 ]
 
-// TODO(auth): แทนด้วยการยืนยันตัวตนจริงใน Phase Auth/RBAC
 const pending = ref<DashboardRole | null>(null)
+
+const DEMO_EMAILS: Record<DashboardRole, string> = {
+  WEAVER: 'weaver1@example.com',
+  COOPERATIVE_OFFICER: 'officer1@example.com',
+  STORE_USER: 'store1@example.com',
+}
 
 const signIn = async (next: DashboardRole) => {
   if (pending.value) return
   pending.value = next
-  role.value = next
-  await navigateTo(homeFor(next))
+  try {
+    const email = DEMO_EMAILS[next]
+    const user = await apiSignIn({
+      username: email,
+      password: 'password',
+    })
+    await navigateTo(useAuthSession().homeFor(user.role))
+  } catch (error) {
+    console.error('Login failed:', error)
+    const toast = useToast()
+    toast.add({
+      title: 'เข้าสู่ระบบไม่สำเร็จ',
+      description: 'กรุณาตรวจสอบว่ามีข้อมูลผู้ใช้งานในระบบหรือรัน seed หรือยัง',
+      color: 'error',
+    })
+  } finally {
+    pending.value = null
+  }
 }
 </script>
 

@@ -4,7 +4,7 @@ import { Menu, PanelLeftClose, PanelLeftOpen } from '@lucide/vue'
 defineEmits<{ openDrawer: [] }>()
 
 const collapsed = useSidebarCollapsed()
-const role = useDemoRole()
+const { user } = useAuthSession()
 </script>
 
 <template>
@@ -37,7 +37,7 @@ const role = useDemoRole()
     <slot />
 
     <div class="ml-auto flex shrink-0 items-center gap-2">
-      <UiAppUserMenu v-if="role" />
+      <UiAppUserMenu v-if="user" />
     </div>
   </header>
 </template>

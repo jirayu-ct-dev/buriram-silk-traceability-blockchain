@@ -1,7 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
 
-// dev mode ต้องรอ Vite โหลด module และ hydration เสร็จก่อน interact
-// ไม่งั้น click จะโดนกลืนเพราะ SSR DOM ยังไม่มี event listener
 const waitForHydration = (page: Page) => page.waitForLoadState('networkidle')
 
 const signInAs = async (page: Page, roleLabel: string, homePath: string) => {
@@ -91,7 +89,7 @@ test('dashboard layout renders sidebar and role-based menu', async ({ page }) =>
   await expect(sidebar.getByRole('link', { name: 'คิวตรวจคำขอ' })).toHaveCount(0)
 
   await expect(page.getByRole('heading', { name: 'ภาพรวมช่างทอ' })).toBeVisible()
-  await expect(page.getByText('ผู้ใช้ตัวอย่าง')).toBeVisible()
+  await expect(page.getByText('แม่ประนอม ไหมไทย')).toBeVisible()
 })
 
 test('header user menu switches role, navigates to role home, and closes with Escape', async ({ page }) => {
@@ -136,10 +134,12 @@ test('sidebar highlights the longest matching menu item', async ({ page }) => {
 
   const sidebar = page.locator('aside[aria-label="เมนูหลัก"]')
   await page.goto('/weaver/items/new')
+  await waitForHydration(page)
   await expect(sidebar.getByRole('link', { name: 'ลงทะเบียนผ้าไหม' })).toHaveAttribute('aria-current', 'page')
   await expect(sidebar.getByRole('link', { name: 'ภาพรวม' })).not.toHaveAttribute('aria-current', 'page')
 
   await page.goto('/weaver/items/00000000-0000-0000-0000-000000000000')
+  await waitForHydration(page)
   await expect(sidebar.getByRole('link', { name: 'ภาพรวม' })).toHaveAttribute('aria-current', 'page')
 })
 
@@ -158,19 +158,33 @@ test('public detail and policy pages render their skeletons', async ({ page }) =
   await expect(page.getByRole('heading', { name: 'นโยบายความเป็นส่วนตัว' })).toBeVisible()
 })
 
-test('every authenticated page renders its skeleton', async ({ page }) => {  await signInAs(page, 'ช่างทอ', '/weaver')
-
-  const cases: [string, string][] = [
+test('every authenticated page renders its skeleton', async ({ page }) => {
+  // ช่างทอ
+  await signInAs(page, 'ช่างทอ', '/weaver')
+  const weaverCases: [string, string][] = [
     ['/weaver/items/new', 'ลงทะเบียนผ้าไหม'],
     ['/weaver/items/00000000-0000-0000-0000-000000000000', 'รายละเอียดผ้าไหม'],
-    ['/review/00000000-0000-0000-0000-000000000000', 'ตรวจคำขอรับรอง'],
-    ['/certificates/00000000-0000-0000-0000-000000000000/manage', 'จัดการใบรับรอง'],
     ['/transfers/00000000-0000-0000-0000-000000000000', 'รายละเอียดการส่งมอบ'],
     ['/audit/00000000-0000-0000-0000-000000000000', 'Audit Trail'],
   ]
-  for (const [path, heading] of cases) {
+  for (const [path, heading] of weaverCases) {
     const response = await page.goto(path)
     expect(response?.status()).toBe(200)
+    await waitForHydration(page)
+    await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
+  }
+
+  // เจ้าหน้าที่สหกรณ์
+  await page.context().clearCookies()
+  await signInAs(page, 'เจ้าหน้าที่สหกรณ์', '/review')
+  const officerCases: [string, string][] = [
+    ['/review/00000000-0000-0000-0000-000000000000', 'ตรวจคำขอรับรอง'],
+    ['/certificates/00000000-0000-0000-0000-000000000000/manage', 'จัดการใบรับรอง'],
+  ]
+  for (const [path, heading] of officerCases) {
+    const response = await page.goto(path)
+    expect(response?.status()).toBe(200)
+    await waitForHydration(page)
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
   }
 })
@@ -227,6 +241,6 @@ test('dashboard sidebar opens as drawer on narrow viewport', async ({ page }) =>
   await expect(sidebar).toBeInViewport()
   await expect(sidebar.getByRole('link', { name: 'การส่งมอบ' })).toBeVisible()
 
-  await page.getByRole('button', { name: 'ปิดเมนู' }).first().click()
+  await sidebar.getByRole('button', { name: 'ปิดเมนู' }).click()
   await expect(sidebar).not.toBeInViewport()
 })
