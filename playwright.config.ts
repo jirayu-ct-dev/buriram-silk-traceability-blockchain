@@ -8,7 +8,8 @@ export default defineConfig({
     baseURL: process.env.NUXT_PUBLIC_APP_BASE_URL ?? 'http://localhost:3007',
   },
   webServer: {
-    command: 'pnpm dev',
+    // Windows ต้องใช้ pnpm.cmd ส่วน macOS/Linux ใช้ pnpm — เลือกตาม platform
+    command: process.platform === 'win32' ? 'pnpm.cmd dev' : 'pnpm dev',
     url: 'http://localhost:3007',
     reuseExistingServer: true,
     timeout: 120_000,

@@ -116,6 +116,7 @@ storage/
 | `03-backend.md` | นักพัฒนา Backend | สร้าง API ทุก endpoint พร้อมระบบยืนยันตัวตนและสิทธิ์การใช้งาน ให้ปลอดภัยทุกชั้น และเตรียมข้อมูลตัวอย่างให้พร้อมสาธิต |
 | `04-blockchain-qa.md` | วิศวกรบล็อกเชน และ ผู้ทดสอบระบบ | สร้าง Ledger Simulator ที่พิสูจน์ความถูกต้องได้ และทดสอบระบบทั้งหมดก่อนส่งมอบเพื่อการันตีคุณภาพ |
 | `05-pm-integration.md` | หัวหน้าโครงการ | วางแผนและประสานงานทั้งทีม ตรวจรับและรวมงานทุกส่วนให้ระบบรันได้จริงในคำสั่งเดียว ควบคุมคุณภาพถึงวันนำเสนอ |
+| `06-next-steps.md` | ทุกคน | คิวงานถัดไปหลัง backend เสร็จ: ตรวจรับ PR คน 4, งานต่อรายคน, ประเด็น Docker validator keys |
 
 **ลำดับการทำงาน (Build Order):** ตาม `docs/system-design.md` §19 — Foundation → Shared UI → Auth/RBAC → Silk Item Workflow → Ledger Simulator → Certification → Certificate Status/Custody → Blockchain Explorer → Quality Gate → Demo
 

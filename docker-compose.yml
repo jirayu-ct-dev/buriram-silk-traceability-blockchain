@@ -17,12 +17,13 @@ services:
       timeout: 5s
       retries: 10
 
-  # One-shot: apply Prisma migrations แล้วจบ (ไม่รันค้าง)
+  # One-shot: apply Prisma migrations + seed demo data แล้วจบ (ไม่รันค้าง)
+  # seed ใช้ upsert เป็นหลักจึงรันซ้ำได้ (idempotent)
   migrate:
     build:
       context: .
       target: builder
-    command: pnpm exec prisma migrate deploy
+    command: sh -c "pnpm exec prisma migrate deploy && pnpm exec prisma db seed"
     environment:
       # ภายใน network ของ compose เรียกผ่านชื่อ service ที่ port ต้นทาง ไม่ใช่ host port 5437
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/buriram_silk
