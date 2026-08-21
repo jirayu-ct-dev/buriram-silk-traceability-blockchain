@@ -2,7 +2,7 @@
 import { Menu, X } from '@lucide/vue'
 
 const route = useRoute()
-const role = useDemoRole()
+const { user } = useAuthSession()
 const mobileMenuOpen = ref(false)
 
 watch(
@@ -57,7 +57,7 @@ const isActive = (to: string) =>
         </nav>
 
         <div class="ml-auto flex shrink-0 items-center gap-2">
-          <UiAppUserMenu v-if="role" />
+          <UiAppUserMenu v-if="user" />
           <NuxtLink
             v-else
             to="/login"

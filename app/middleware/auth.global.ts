@@ -1,14 +1,24 @@
-// TODO(auth): demo guard — แทนด้วยการตรวจ session จริงหลัง implement Phase Auth/RBAC
 export default defineNuxtRouteMiddleware((to) => {
-  const role = useDemoRole()
+  const { loggedIn, user, homeFor } = useAuthSession()
 
-  // หน้า dashboard ต้องเข้าสู่ระบบก่อน
-  if (to.meta.layout === 'dashboard' && !role.value) {
+  // Dashboard layout requires user to be logged in
+  if (to.meta.layout === 'dashboard' && !loggedIn.value) {
     return navigateTo('/login')
   }
 
-  // เข้าสู่ระบบแล้วไม่ต้องเห็นหน้า login อีก
-  if (to.path === '/login' && role.value) {
-    return navigateTo(useDashboardNav().homeFor(role.value))
+  // Logged-in users should not access login page
+  if (to.path === '/login' && loggedIn.value && user.value) {
+    return navigateTo(homeFor(user.value.role))
+  }
+
+  // Protect routes based on user role
+  if (to.meta.layout === 'dashboard' && user.value) {
+    const role = user.value.role
+    if (to.path.startsWith('/weaver') && role !== 'WEAVER') {
+      return navigateTo(homeFor(role))
+    }
+    if ((to.path.startsWith('/review') || to.path.startsWith('/certificates')) && role !== 'COOPERATIVE_OFFICER') {
+      return navigateTo(homeFor(role))
+    }
   }
 })

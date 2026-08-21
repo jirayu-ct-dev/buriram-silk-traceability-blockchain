@@ -1,11 +1,10 @@
 <script setup lang="ts">
-// TODO(auth): ดึง role จาก session หลัง implement Phase Auth/RBAC
-// แล้ว redirect ไปหน้า login เมื่อไม่มี session
-const role = useDemoRole()
+const { user } = useAuthSession()
 const sidebarCollapsed = useSidebarCollapsed()
 
 const { navFor } = useDashboardNav()
-const navItems = computed(() => (role.value ? navFor(role.value) : []))
+const navItems = computed(() => (user.value ? navFor(user.value.role) : []))
+
 
 const drawerOpen = ref(false)
 
