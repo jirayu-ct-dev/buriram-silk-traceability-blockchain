@@ -13,7 +13,7 @@ const updateSilkItemSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const dbUser = await requireRole(event, 'WEAVER')
-  const idParam = event.context.params?.id
+  const idParam = getRouterParam(event, 'id')
 
   if (!idParam) {
     throw createApiError('BAD_REQUEST', 'กรุณาระบุไอดีของผ้าไหม', 400)

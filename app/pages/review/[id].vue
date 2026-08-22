@@ -41,25 +41,7 @@ const loadData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    await new Promise(r => setTimeout(r, 400))
-    // TODO(api): GET /api/silk-items/:id หรือ GET /api/reviews/:id
-    detail.value = {
-      requestId: requestId.value,
-      silkItemPublicId: 'SI-002',
-      title: 'ผ้าไหมโขงสีคราม',
-      pattern: 'โขง',
-      material: 'ไหมผสมฝ้าย',
-      technique: 'ทอจักร',
-      widthCm: 90,
-      lengthCm: 180,
-      notes: 'ลวดลายโขงดั้งเดิม สีจากดอกคราม',
-      submittedBy: 'แม่บุญมา',
-      submittedAt: '2026-08-19T14:20:00Z',
-      evidence: [
-        { id: 'e1', fileName: 'silk_002_photo.jpg', sha256: 'b2c3d4e5f6a1b2c3...' },
-        { id: 'e2', fileName: 'silk_002_detail.pdf', sha256: 'a1b2c3d4e5...' },
-      ],
-    }
+    detail.value = await $fetch<ReviewDetail>(String(`/api/reviews/${requestId.value}`))
   } catch {
     error.value = 'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่'
   } finally {
@@ -81,15 +63,17 @@ const validateReject = (): boolean => {
 const handleApprove = async () => {
   const ok = await confirm({
     title: 'ยืนยันอนุมัติ',
-    message: 'คุณต้องการอนุมัติคำขอนี้และออกใบรับรองใช่หรือไม่?',
+    message: 'คณตองการอนุมัตคำขอนี้และออกใบรบัรองใชหรอไม?',
     confirmLabel: 'อนุมัติ',
   })
   if (!ok) return
   isSubmitting.value = true
   try {
-    await new Promise(r => setTimeout(r, 800))
-    // TODO(api): POST /api/reviews/:id/approve { idempotencyKey: crypto.randomUUID() }
-    toast.success('อนุมัติสำเร็จ — ออกใบรับรองแล้ว')
+    await $fetch(String(`/api/reviews/${requestId.value}/approve`), {
+      method: 'POST',
+      body: { idempotencyKey: crypto.randomUUID() },
+    })
+    toast.success('อนุมัติสำเร็จ — ออกใบรบัรองแลว')
     await navigateTo('/review')
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } }
@@ -100,17 +84,19 @@ const handleApprove = async () => {
 const handleReject = async () => {
   if (!validateReject()) return
   const ok = await confirm({
-    title: 'ยืนยันปฏิเสธ',
-    message: `จะปฏิเสธคำขอนี้ด้วยเหตุผล "${reasonLabelOf(reasonCode.value)}" ใช่หรือไม่?`,
+    title: 'ยืนยันทิเสธ',
+    message: `จะปฏิเสธคำขอนี้ดวยเหตผล "${reasonLabelOf(reasonCode.value)}" ใชหรอไม?`,
     confirmLabel: 'ปฏิเสธ',
     danger: true,
   })
   if (!ok) return
   isSubmitting.value = true
   try {
-    await new Promise(r => setTimeout(r, 800))
-    // TODO(api): POST /api/reviews/:id/reject { reasonCode, reviewNote }
-    toast.success('ปฏิเสธคำขอแล้ว')
+    await $fetch(String(`/api/reviews/${requestId.value}/reject`), {
+      method: 'POST',
+      body: { reasonCode: reasonCode.value, reviewNote: reviewNote.value },
+    })
+    toast.success('ปฏิเสธคำขอแลว')
     await navigateTo('/review')
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } }

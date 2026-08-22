@@ -9,7 +9,7 @@ const statusSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const dbUser = await requireRole(event, 'COOPERATIVE_OFFICER')
-  const certIdParam = event.context.params?.id
+  const certIdParam = getRouterParam(event, 'id')
 
   if (!certIdParam) {
     throw createApiError('BAD_REQUEST', 'กรุณาระบุไอดีหรือรหัสใบรับรอง', 400)

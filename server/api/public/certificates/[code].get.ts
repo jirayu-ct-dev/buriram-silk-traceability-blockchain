@@ -1,7 +1,7 @@
 import type { PublicCertificate, PublicCertResult } from '../../../../shared/types/api'
 
 export default defineEventHandler(async (event) => {
-  const code = event.context.params?.code
+  const code = getRouterParam(event, 'code')
 
   if (!code) {
     throw createApiError('BAD_REQUEST', 'กรุณาระบุรหัสใบรับรอง', 400)

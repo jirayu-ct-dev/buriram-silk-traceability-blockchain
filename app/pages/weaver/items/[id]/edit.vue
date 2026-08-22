@@ -1,15 +1,24 @@
 <script setup lang="ts">
-import { FilePlus2, Upload, X, FileText } from '@lucide/vue'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Edit, ArrowLeft, FilePlus2, Upload, X, FileText } from '@lucide/vue'
 import { z } from 'zod'
 import { useToast } from '~/composables/useToast'
-import type { CreateSilkItemInput } from '~~/shared/types/api'
+import type { CreateSilkItemInput, SilkItemDetail } from '~~/shared/types/api'
 
 definePageMeta({ layout: 'dashboard' })
 
-useHead({ title: 'ลงทะเบียนผ้าไหม' })
+useHead({ title: 'แก้ไขผ้าไหม' })
 
+const route = useRoute()
+const router = useRouter()
 const toast = useToast()
+
+const silkItemId = computed(() => String(route.params.id ?? ''))
+const isLoading = ref(true)
+const error = ref<string | null>(null)
+const isSaving = ref(false)
+const detail = ref<SilkItemDetail | null>(null)
 
 const silkItemSchema = z.object({
   title: z.string().min(1, 'กรุณากรอกชื่อผืนผ้า'),
@@ -37,8 +46,10 @@ const form = ref<SilkItemForm>({
 
 const errors = ref<Partial<Record<keyof SilkItemForm, string>>>({})
 const touched = ref<Partial<Record<keyof SilkItemForm, boolean>>>({})
-const isSubmitting = ref(false)
 const attachedFiles = ref<File[]>([])
+
+const isDraft = computed(() => detail.value?.status === 'DRAFT')
+const isFormValid = computed(() => form.value.title.trim() !== '')
 
 const getErrorMessage = (error: z.ZodError): string => {
   return error.issues[0]?.message ?? 'ข้อมูลไม่ถูกต้อง'
@@ -104,7 +115,51 @@ const handleFileSelect = (event: Event) => {
   }
 }
 
-const handleSubmit = async () => {
+const applyDetail = (data: SilkItemDetail) => {
+  form.value = {
+    title: data.revision.title,
+    pattern: data.revision.pattern ?? '',
+    material: data.revision.material ?? '',
+    technique: data.revision.technique ?? '',
+    widthCm: data.revision.widthCm ?? '',
+    lengthCm: data.revision.lengthCm ?? '',
+    productionDate: data.revision.productionDate ? data.revision.productionDate.slice(0, 10) : '',
+    notes: data.revision.notes ?? '',
+  }
+  errors.value = {}
+  touched.value = {}
+}
+
+const loadData = async () => {
+  isLoading.value = true
+  error.value = null
+  try {
+    const data = await $fetch<SilkItemDetail>(String(`/api/silk-items/${silkItemId.value}`))
+    detail.value = data
+    if (data.status === 'DRAFT') {
+      applyDetail(data)
+    }
+  } catch (err: unknown) {
+    const e = err as { statusCode?: number, data?: { message?: string } }
+    if (e?.statusCode === 404) {
+      error.value = 'ไม่พบข้อมูลผ้าไหมรายการนี้'
+    } else if (!e?.statusCode) {
+      error.value = 'ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง'
+    } else {
+      error.value = e?.data?.message ?? 'ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง'
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handleBack = () => {
+  router.back()
+}
+
+const handleSave = async () => {
+  if (!isDraft.value || isSaving.value) return
+
   touched.value = Object.keys(form.value).reduce((acc, key) => {
     acc[key as keyof SilkItemForm] = true
     return acc
@@ -112,16 +167,15 @@ const handleSubmit = async () => {
 
   if (!validateAll()) return
 
-  isSubmitting.value = true
-
-  const resetForm = () => {
-    form.value = { title: '', pattern: '', material: '', technique: '', widthCm: '', lengthCm: '', productionDate: '', notes: '' }
-    attachedFiles.value = []
-    errors.value = {}
-    touched.value = {}
-  }
+  isSaving.value = true
 
   try {
+    for (const file of attachedFiles.value) {
+      const fd = new FormData()
+      fd.append('file', file)
+      await $fetch(String(`/api/silk-items/${silkItemId.value}/evidence`), { method: 'POST', body: fd })
+    }
+
     const payload: CreateSilkItemInput = {
       title: form.value.title.trim(),
       pattern: form.value.pattern?.trim() || undefined,
@@ -132,44 +186,77 @@ const handleSubmit = async () => {
       productionDate: form.value.productionDate || undefined,
       notes: form.value.notes?.trim() || undefined,
     }
-    const created = await $fetch<{ id: string, publicId?: string }>('/api/silk-items', { method: 'POST', body: payload })
-    for (const file of attachedFiles.value) {
-      const fd = new FormData()
-      fd.append('file', file)
-      await $fetch(String(`/api/silk-items/${created.id}/evidence`), { method: 'POST', body: fd }).catch(() => {})
-    }
-    toast.success('บันทึกร่างผ้าไหมสำเร็จ — พร้อมส่งขอรับรองได้แล้ว')
-    resetForm()
-    await navigateTo('/weaver')
+
+    await $fetch(String(`/api/silk-items/${silkItemId.value}`), { method: 'PATCH', body: payload })
+    toast.success('บันทึกข้อมูลผ้าไหมสำเร็จ')
+    await navigateTo(`/weaver/items/${silkItemId.value}`)
   } catch (err: unknown) {
     const e = err as { data?: { message?: string, fieldErrors?: Record<string, string> } }
     if (e?.data?.fieldErrors) {
-      for (const [k, msg] of Object.entries(e.data.fieldErrors)) errors.value[k as keyof SilkItemForm] = msg
+      for (const [k, msg] of Object.entries(e.data.fieldErrors)) {
+        errors.value[k as keyof SilkItemForm] = msg
+      }
     }
-    toast.error(e?.data?.message ?? 'เกิดข้อผิดพลาด กรุณาลองใหม่')
+    toast.error(e?.data?.message ?? 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')
   } finally {
-    isSubmitting.value = false
+    isSaving.value = false
   }
 }
 
-const isFormValid = computed(() => {
-  return form.value.title.trim() !== ''
+onMounted(() => {
+  loadData()
 })
 </script>
 
 <template>
   <div class="mx-auto max-w-4xl">
-    <div class="flex items-center gap-3">
-      <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-700 lg:hidden">
-        <FilePlus2 class="size-5" aria-hidden="true" />
-      </span>
-      <div>
-        <h1 class="text-xl font-semibold text-neutral-900">ลงทะเบียนผ้าไหม</h1>
-        <p class="text-sm text-neutral-600">กรอกข้อมูลและแนบหลักฐานเพื่อส่งขอรับรอง</p>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-700 lg:hidden">
+          <Edit class="size-5" aria-hidden="true" />
+        </span>
+        <div>
+          <h1 class="text-xl font-semibold text-neutral-900">แก้ไขผ้าไหม</h1>
+          <p class="text-sm text-neutral-600">แก้ไขข้อมูลเมื่อยังอยู่ในสถานะ DRAFT</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        @click="handleBack"
+        class="inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        <ArrowLeft class="size-4" aria-hidden="true" />
+        กลับ
+      </button>
+    </div>
+
+    <div v-if="isLoading" class="mt-6 space-y-4">
+      <UiSkeletonList :rows="3" />
+      <UiSkeletonList :rows="2" />
+    </div>
+
+    <div v-else-if="error">
+      <UiErrorState :title="'ไม่พบข้อมูล'" :description="error" retryLabel="ลองใหม่อีกครั้ง" @retry="loadData" />
+    </div>
+
+    <div v-else-if="detail && !isDraft" class="mt-6">
+      <UiEmptyState
+        title="ไม่สามารถแก้ไขรายการนี้"
+        description="รายการนี้ไม่ได้อยู่ในสถานะ DRAFT"
+      />
+      <div class="mt-4 flex justify-end">
+        <button
+          type="button"
+          @click="handleBack"
+          class="inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <ArrowLeft class="size-4" aria-hidden="true" />
+          กลับ
+        </button>
       </div>
     </div>
 
-    <form @submit.prevent="handleSubmit" class="mt-8 space-y-6" novalidate>
+    <form v-else-if="detail" @submit.prevent="handleSave" class="mt-8 space-y-6" novalidate>
       <div class="rounded-xl border border-neutral-200 bg-white p-6 space-y-6">
         <h2 class="text-lg font-medium text-neutral-900">ข้อมูลผ้าไหม</h2>
 
@@ -323,6 +410,19 @@ const isFormValid = computed(() => {
         </h2>
         <p class="text-xs text-neutral-500">รองรับไฟล์ภาพ (JPG, PNG) และเอกสาร (PDF) — ไม่เกิน 10 MB ต่อไฟล์</p>
 
+        <div v-if="detail.evidence.length > 0" class="space-y-2" role="list" aria-label="ไฟล์หลักฐานเดิม">
+          <p class="text-xs font-medium text-neutral-600">ไฟล์ที่แนบมาแล้ว ({{ detail.evidence.length }})</p>
+          <ul class="divide-y divide-neutral-200">
+            <li v-for="file in detail.evidence" :key="file.id" class="flex items-center gap-3 py-2" role="listitem">
+              <FileText class="size-5 text-neutral-400 shrink-0" aria-hidden="true" />
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-neutral-900 truncate">{{ file.fileName }}</p>
+                <p class="text-xs text-neutral-500 font-mono truncate">{{ file.sha256 }}</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
         <div class="border-2 border-dashed border-neutral-300 rounded-lg p-6 text-center hover:border-primary-400 hover:bg-primary-50 transition-colors cursor-pointer relative">
           <input
             type="file"
@@ -341,7 +441,7 @@ const isFormValid = computed(() => {
         </div>
 
         <div v-if="attachedFiles.length > 0" class="space-y-2" role="list" aria-label="ไฟล์ที่แนบมา">
-          <p class="text-xs font-medium text-neutral-600">ไฟล์ที่แนบมา ({{ attachedFiles.length }})</p>
+          <p class="text-xs font-medium text-neutral-600">ไฟล์ที่แนบเพิ่ม ({{ attachedFiles.length }})</p>
           <ul class="divide-y divide-neutral-200">
             <li v-for="(file, index) in attachedFiles" :key="index" class="flex items-center justify-between py-2" role="listitem">
               <div class="flex items-center gap-3 min-w-0">
@@ -355,7 +455,7 @@ const isFormValid = computed(() => {
                 type="button"
                 @click="removeFile(index)"
                 class="shrink-0 rounded-md p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors"
-                aria-label="ลบไฟล์ {{ file.name }}"
+                :aria-label="`ลบไฟล์ ${file.name}`"
               >
                 <X class="size-4" aria-hidden="true" />
               </button>
@@ -367,19 +467,25 @@ const isFormValid = computed(() => {
       <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <button
           type="button"
-          @click="handleSubmit"
-          :disabled="isSubmitting || !isFormValid"
+          @click="handleBack"
+          class="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          ยกเลิก
+        </button>
+        <button
+          type="submit"
+          :disabled="isSaving || !isFormValid"
           class="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
           :class="isFormValid ? 'bg-primary hover:bg-primary-700' : 'bg-neutral-300 text-neutral-500'"
         >
-          <span v-if="isSubmitting" class="flex items-center gap-2">
+          <span v-if="isSaving" class="flex items-center gap-2">
             <svg class="animate-spin size-4" viewBox="0 0 24 24" aria-hidden="true">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" />
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
             กำลังบันทึก...
           </span>
-          <span v-else>บันทึกร่าง</span>
+          <span v-else>บันทึก</span>
         </button>
       </div>
     </form>

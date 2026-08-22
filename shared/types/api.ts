@@ -4,7 +4,14 @@ export interface SessionUser {
   id: string
   displayName: string
   role: Role
+  organizationId: string | null
   organizationName: string
+}
+
+export interface OrganizationOption {
+  id: string
+  name: string
+  type: 'COOPERATIVE' | 'STORE'
 }
 
 export type SilkItemStatus = 'DRAFT' | 'SUBMITTED' | 'CERTIFIED' | 'REJECTED'
@@ -14,6 +21,7 @@ export interface SilkItemSummary {
   publicId: string
   title: string
   status: SilkItemStatus
+  certificateStatus?: 'ACTIVE' | 'SUSPENDED' | 'REVOKED'
   updatedAt: string // ISO datetime
 }
 
@@ -62,7 +70,7 @@ export interface TransferItem {
   createdAt: string
 }
 
-export type PublicCertResult = 'VALID' | 'SUSPENDED' | 'REVOKED' | 'NOT_FOUND'
+export type PublicCertResult = 'VALID' | 'SUSPENDED' | 'REVOKED' | 'NOT_FOUND' | 'CHAIN_INVALID'
 
 export interface PublicCertificate {
   result: PublicCertResult

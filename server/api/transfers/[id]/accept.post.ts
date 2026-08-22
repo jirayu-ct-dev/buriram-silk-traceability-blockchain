@@ -2,7 +2,7 @@ import { appendEvents } from '../../../services/ledger.service'
 
 export default defineEventHandler(async (event) => {
   const dbUser = await requireSession(event)
-  const transferId = event.context.params?.id
+  const transferId = getRouterParam(event, 'id')
 
   if (!transferId) {
     throw createApiError('BAD_REQUEST', 'กรุณาระบุไอดีของรายการส่งมอบ', 400)

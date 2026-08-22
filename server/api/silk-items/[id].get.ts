@@ -15,7 +15,7 @@ type SilkItemWithRelations = Prisma.SilkItemGetPayload<{
 
 export default defineEventHandler(async (event) => {
   const dbUser = await requireSession(event)
-  const idParam = event.context.params?.id
+  const idParam = getRouterParam(event, 'id')
 
   if (!idParam) {
     throw createApiError('BAD_REQUEST', 'กรุณาระบุไอดีของผ้าไหม', 400)

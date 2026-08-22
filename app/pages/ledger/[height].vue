@@ -10,7 +10,17 @@ const toast = useToast()
 const isLoading = ref(true)
 const error = ref<string | null>(null)
 const copied = ref<string | null>(null)
-const block = ref<{ index: number, timestamp: string, hash: string, previousHash: string, validatorName: string, signatureValid: boolean, events: { eventType: string, aggregateId?: string, payload: Record<string, unknown> }[] } | null>(null)
+interface LedgerBlock {
+  index: number
+  timestamp: string
+  hash: string
+  previousHash: string
+  validatorName: string
+  signatureValid: boolean
+  events: { eventType: string, aggregateId?: string, payload: Record<string, unknown> }[]
+}
+
+const block = ref<LedgerBlock | null>(null)
 
 const truncate = (h: string) => h.length > 16 ? `${h.slice(0, 8)}...${h.slice(-6)}` : h
 const copy = async (v: string, k: string) => { await navigator.clipboard.writeText(v); copied.value = k; toast.success('คัดลอกแล้ว'); setTimeout(() => copied.value = null, 2000) }
@@ -18,17 +28,11 @@ const copy = async (v: string, k: string) => { await navigator.clipboard.writeTe
 const load = async () => {
   isLoading.value = true; error.value = null
   try {
-    await new Promise(r => setTimeout(r, 400))
-    // TODO(api): GET /api/ledger/blocks/:index
     const idx = Number(blockHeight.value)
     if (Number.isNaN(idx)) throw new Error('invalid')
-    block.value = {
-      index: idx, timestamp: '2026-08-15T08:00:00Z', hash: 'a1b2c3d4e5f67890abcdef1234567890abcdef12', previousHash: '0000genesisabcd1234567890',
-      validatorName: ['COOPERATIVE_AUTHORITY','LOCAL_CERTIFIER_AUTHORITY','RETAIL_NETWORK_AUTHORITY'][idx % 3] ?? 'COOPERATIVE_AUTHORITY',
-      signatureValid: true,
-      events: idx === 0 ? [{ eventType: 'GENESIS', payload: { networkId: 'buriram-silk' } }] : [{ eventType: 'ISSUE_CERTIFICATE', aggregateId: 'SI-001', payload: { certificateCode: 'BR-SILK-001' } }],
-    }
-  } catch { error.value = 'ไม่พบ block นี้'; block.value = null } finally { isLoading.value = false }
+    const blockUrl = String(`/api/ledger/blocks/${idx}`)
+    block.value = await $fetch<LedgerBlock>(blockUrl)
+  } catch { error.value = 'ไม่พบ block น้ี'; block.value = null } finally { isLoading.value = false }
 }
 onMounted(load)
 watch(blockHeight, load)

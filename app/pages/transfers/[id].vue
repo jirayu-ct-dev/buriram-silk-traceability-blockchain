@@ -2,6 +2,7 @@
 import { ArrowLeftRight, CheckCircle, XCircle } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import { useConfirm } from '~/composables/useConfirm'
+import type { TransferItem } from '~~/shared/types/api'
 
 definePageMeta({ layout: 'dashboard' })
 useHead({ title: 'รายละเอียดการส่งมอบ' })
@@ -14,29 +15,36 @@ const { confirm } = useConfirm()
 const isLoading = ref(true)
 const error = ref<string | null>(null)
 const isSubmitting = ref(false)
-const detail = ref<{ id: string, silkItemPublicId: string, silkItemTitle: string, fromOrgName: string, toOrgName: string, status: string, canResolve: boolean, createdAt: string } | null>(null)
+const detail = ref<TransferItem | null>(null)
 
 const load = async () => {
   isLoading.value = true; error.value = null
   try {
-    await new Promise(r => setTimeout(r, 400))
-    // TODO(api): GET /api/transfers/:id
-    detail.value = { id: transferId.value, silkItemPublicId: 'SI-001', silkItemTitle: 'ผ้าไหมมัดมีกล้วยหอม', fromOrgName: 'สหกรณ์ผ้าไหม', toOrgName: 'ร้านไหมบุรีรัมย์', status: 'PENDING', canResolve: true, createdAt: '2026-08-20T09:00:00Z' }
+    const detailUrl = String(`/api/transfers/${transferId.value}`)
+    detail.value = await $fetch<TransferItem>(detailUrl)
   } catch { error.value = 'โหลดไม่สำเร็จ' } finally { isLoading.value = false }
 }
 onMounted(load)
 
 const handleAccept = async () => {
-  const ok = await confirm({ title: 'ยืนยันรับการส่งมอบ', message: 'คุณต้องการยืนยันรับผ้าไหมรายการนี้ใช่หรือไม่?', confirmLabel: 'ยืนยันรับ' })
+  const ok = await confirm({ title: 'ยืนยัันรบัการส่งมอบ', message: 'คณตองการยืนยัันรบัผ้าไหมรายการนนี้ใชหรอไม?', confirmLabel: 'ยืนยัันรบั' })
   if (!ok) return
   isSubmitting.value = true
-  try { await new Promise(r => setTimeout(r, 600)); /* TODO POST /api/transfers/:id/accept */ toast.success('ยืนยันรับแล้ว'); await navigateTo('/transfers') } catch { toast.error('ยืนยันไม่สำเร็จ') } finally { isSubmitting.value = false }
+  try {
+    await $fetch(String(`/api/transfers/${transferId.value}/accept`), { method: 'POST' })
+    toast.success('ยืนยัันรบัแลว')
+    await navigateTo('/transfers')
+  } catch { toast.error('ยืนยัันไม่สำเร็จ') } finally { isSubmitting.value = false }
 }
 const handleReject = async () => {
-  const ok = await confirm({ title: 'ยืนยันปฏิเสธ', message: 'คุณต้องการปฏิเสธการส่งมอบนี้ใช่หรือไม่?', confirmLabel: 'ปฏิเสธ', danger: true })
+  const ok = await confirm({ title: 'ยืนยัันปฏิเสธ', message: 'คณตองการปฏิเสธการส่งมอบนนี้ใชหรอไม?', confirmLabel: 'ปฏิเสธ', danger: true })
   if (!ok) return
   isSubmitting.value = true
-  try { await new Promise(r => setTimeout(r, 600)); /* TODO POST /api/transfers/:id/reject */ toast.success('ปฏิเสธแล้ว'); await navigateTo('/transfers') } catch { toast.error('ปฏิเสธไม่สำเร็จ') } finally { isSubmitting.value = false }
+  try {
+    await $fetch(String(`/api/transfers/${transferId.value}/reject`), { method: 'POST' })
+    toast.success('ปฏิเสธแลว')
+    await navigateTo('/transfers')
+  } catch { toast.error('ปฏิเสธไม่สำเร็จ') } finally { isSubmitting.value = false }
 }
 </script>
 

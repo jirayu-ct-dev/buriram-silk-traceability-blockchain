@@ -19,9 +19,8 @@ const isSubmitting = ref(false)
 const load = async () => {
   isLoading.value = true; error.value = null
   try {
-    await new Promise(r => setTimeout(r, 400))
-    // TODO(api): GET /api/certificates/:id หรือ GET /api/public/certificates/:code เพื่อดูสถานะ
-    status.value = 'ACTIVE'
+    const cert = await $fetch<{ status: 'ACTIVE' | 'SUSPENDED' | 'REVOKED' }>(String(`/api/certificates/${certificateId.value}`))
+    status.value = cert.status
   } catch { error.value = 'โหลดไม่สำเร็จ' } finally { isLoading.value = false }
 }
 onMounted(load)
@@ -41,8 +40,10 @@ const doAction = async (action: 'SUSPEND' | 'REACTIVATE' | 'REVOKE') => {
   if (reason === null) return
   isSubmitting.value = true
   try {
-    await new Promise(r => setTimeout(r, 600))
-    // TODO(api): POST /api/certificates/:id/status { action, reason }
+    await $fetch(String(`/api/certificates/${certificateId.value}/status`), {
+      method: 'POST',
+      body: { action, reason },
+    })
     if (action === 'SUSPEND') status.value = 'SUSPENDED'
     else if (action === 'REACTIVATE') status.value = 'ACTIVE'
     else status.value = 'REVOKED'

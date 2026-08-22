@@ -8,14 +8,6 @@ definePageMeta({ layout: 'dashboard' })
 
 useHead({ title: 'ภาพรวมช่างทอ' })
 
-const MOCK_SILK_ITEMS: SilkItemSummary[] = [
-  { id: '1', publicId: 'BR-SILK-001', title: 'ผ้าไหมมัดมีกล้วยหอม ผืนที่ 1', status: 'CERTIFIED', updatedAt: '2024-01-15T10:30:00Z' },
-  { id: '2', publicId: 'BR-SILK-002', title: 'ผ้าไหมลวดลายโขง สีคราม', status: 'SUBMITTED', updatedAt: '2024-01-20T14:22:00Z' },
-  { id: '3', publicId: 'BR-SILK-003', title: 'ผ้าไหมทอผ้าข้าง ลวดลายดอกไม้', status: 'DRAFT', updatedAt: '2024-01-22T09:15:00Z' },
-  { id: '4', publicId: 'BR-SILK-004', title: 'ผ้าไหมผสมฝ้าย ลวดลาย幂', status: 'REJECTED', updatedAt: '2024-01-10T16:45:00Z' },
-  { id: '5', publicId: 'BR-SILK-005', title: 'ผ้าไหมมัดมีไทยแลนด์', status: 'DRAFT', updatedAt: '2024-01-25T11:00:00Z' },
-]
-
 const silkItems = ref<SilkItemSummary[]>([])
 const isLoading = ref(true)
 const error = ref<string | null>(null)
@@ -27,8 +19,7 @@ const loadSilkItems = async () => {
     const data = await $fetch<SilkItemSummary[]>('/api/silk-items')
     silkItems.value = data
   } catch {
-    // fallback mock เมื่อ API ยังไม่พร้อม (ให้ UI ใช้งานได้ + e2e ผ่าน)
-    silkItems.value = MOCK_SILK_ITEMS
+    error.value = 'โหลดข้้อมูลผ้้าไหมไม่สำเร็จ กรุณาลองใหม่อีกครั้้ง'
   } finally {
     isLoading.value = false
   }

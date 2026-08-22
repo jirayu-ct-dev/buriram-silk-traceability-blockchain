@@ -10,6 +10,48 @@ const signInAs = async (page: Page, roleLabel: string, homePath: string) => {
   await waitForHydration(page)
 }
 
+const PNG_BUFFER = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
+
+const createDraftItem = async (page: Page, title: string, withEvidence = false) => {
+  await page.goto('/weaver/items/new')
+  await waitForHydration(page)
+
+  await page.getByLabel('ชื่อผืนผ้า').fill(title)
+  await page.getByLabel('ลวดลาย').fill('มัดมี E2E')
+
+  if (withEvidence) {
+    await page.getByLabel('เลือกไฟล์หลักฐาน').setInputFiles({
+      name: `evidence-${Date.now()}.png`,
+      mimeType: 'image/png',
+      buffer: PNG_BUFFER,
+    })
+  }
+
+  const createResponsePromise = page.waitForResponse(
+    res => res.request().method() === 'POST' && new URL(res.url()).pathname === '/api/silk-items',
+    { timeout: 10_000 },
+  )
+  const evidenceResponsePromise = withEvidence
+    ? page.waitForResponse(res => res.request().method() === 'POST' && res.url().includes('/evidence'), { timeout: 10_000 })
+    : null
+
+  await page.getByRole('button', { name: 'บันทึกร่าง', exact: true }).click()
+
+  const createResponse = await createResponsePromise
+  expect(createResponse.status()).toBe(200)
+  const created = (await createResponse.json()) as { id: string, publicId: string }
+
+  if (evidenceResponsePromise) {
+    const evidenceResponse = await evidenceResponsePromise
+    expect(evidenceResponse.status()).toBe(200)
+  }
+
+  await page.waitForURL(/\/weaver$/)
+  await waitForHydration(page)
+
+  return created
+}
+
 test('weaver can fill new silk item form and see success toast (Phase 1.4)', async ({ page }) => {
   await signInAs(page, 'ช่างทอ', '/weaver')
   await page.goto('/weaver/items/new')
@@ -136,4 +178,138 @@ test('hash copy buttons are present and ledger verify badge shows', async ({ pag
   await waitForHydration(page)
   await expect(page.getByRole('heading', { name: /Block #1/ })).toBeVisible()
   await expect(page.getByLabel('คัดลอก hash')).toBeVisible()
+})
+
+test('weaver can edit a DRAFT silk item and save changes', async ({ page }) => {
+  const runId = Date.now().toString(36)
+  const initialTitle = `ผ้าไหม E2E แก้ไข ${runId}`
+
+  await signInAs(page, 'ช่างทอ', '/weaver')
+  const created = await createDraftItem(page, initialTitle)
+
+  await page.goto(`/weaver/items/${created.id}/edit`)
+  await waitForHydration(page)
+  await expect(page.getByRole('heading', { name: 'แก้ไขผ้าไหม' })).toBeVisible()
+  await expect(page.getByLabel('ชื่อผืนผ้า')).toHaveValue(initialTitle)
+
+  const updatedTitle = `${initialTitle} (แก้ไข)`
+  await page.getByLabel('ชื่อผืนผ้า').fill(updatedTitle)
+  await page.getByLabel('หมายเหตุ').fill('หมายเหตุดัวย E2E')
+
+  const patchResponsePromise = page.waitForResponse(
+    res => res.request().method() === 'PATCH' && res.url().includes(`/api/silk-items/${created.id}`),
+    { timeout: 10_000 },
+  )
+  await page.getByRole('button', { name: 'บันทึก', exact: true }).click()
+  const patchResponse = await patchResponsePromise
+  expect(patchResponse.status()).toBe(200)
+
+  await expect(page.getByText('บันทึกข้อมูลผ้าไหมสำเร็จ')).toBeVisible()
+  await page.waitForURL(/\/weaver\/items\/[^/]+$/)
+  await waitForHydration(page)
+  await expect(page.getByText(updatedTitle)).toBeVisible()
+})
+
+test('weaver can resubmit a rejected silk item, edit the new DRAFT, and save evidence', async ({ page }) => {
+  const runId = Date.now().toString(36)
+  const title = `ผ้าไหม E2E Resubmit ${runId}`
+
+  await signInAs(page, 'ช่างทอ', '/weaver')
+  const created = await createDraftItem(page, title, true)
+
+  await page.goto(`/weaver/items/${created.id}`)
+  await waitForHydration(page)
+  await expect(page.getByRole('heading', { name: 'รายละเอียดผ้าไหม' })).toBeVisible()
+  await expect(page.getByText('ฉบับแก้ไขที่ 1')).toBeVisible()
+
+  const submitResponsePromise = page.waitForResponse(
+    res => res.request().method() === 'POST' && res.url().includes('/submit'),
+    { timeout: 10_000 },
+  )
+  await page.getByRole('button', { name: 'ส่งขอรับรอง' }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: 'ส่งขอรับรอง' }).click()
+  const submitResponse = await submitResponsePromise
+  expect(submitResponse.status()).toBe(200)
+  await expect(page.getByText('ส่งคำขอรับรองสำเร็จ')).toBeVisible()
+  await expect(page.getByText('รอตรวจ').first()).toBeVisible()
+
+  await page.goto(`/weaver/items/${created.id}/edit`)
+  await waitForHydration(page)
+  await expect(page.getByText('ไม่สามารถแก้ไขรายการนี้')).toBeVisible()
+
+  await page.context().clearCookies()
+  await signInAs(page, 'เจ้าหน้าที่สหกรณ์', '/review')
+  await page.getByLabel('ค้นหาคำขอ').fill(title)
+  await expect(page.getByRole('table')).toBeVisible()
+  await page.getByRole('link', { name: 'ตรวจ', exact: true }).first().click()
+  await waitForHydration(page)
+  await expect(page.getByRole('heading', { name: 'ตรวจคำขอรับรอง' })).toBeVisible()
+  await expect(page.getByText(title)).toBeVisible()
+
+  await page.getByLabel(/เหตุผล/).selectOption({ label: 'หลักฐานไม่ครบถ้วน' })
+  await page.getByLabel(/บันทึกการตรวจ/).fill('ปฏิเสธดวย E2E')
+
+  const rejectResponsePromise = page.waitForResponse(
+    res => res.request().method() === 'POST' && res.url().includes('/reject'),
+    { timeout: 10_000 },
+  )
+  await page.getByRole('button', { name: 'ปฏิเสธ', exact: true }).click()
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: 'ปฏิเสธ', exact: true }).click()
+  const rejectResponse = await rejectResponsePromise
+  expect(rejectResponse.status()).toBe(200)
+
+  await page.waitForURL(/\/review$/)
+  await waitForHydration(page)
+  await expect(page.getByText('ปฏิเสธคำขอแลว')).toBeVisible()
+
+  await page.context().clearCookies()
+  await signInAs(page, 'ช่างทอ', '/weaver')
+  await page.goto(`/weaver/items/${created.id}`)
+  await waitForHydration(page)
+  await expect(page.getByText('ถูกปฏิเสธ').first()).toBeVisible()
+
+  const resubmitResponsePromise = page.waitForResponse(
+    res => res.request().method() === 'POST' && res.url().includes('/revisions'),
+    { timeout: 10_000 },
+  )
+  await page.getByRole('button', { name: 'สร้างฉบับแก้ใหม่และส่งใหม่' }).click()
+  const resubmitResponse = await resubmitResponsePromise
+  expect(resubmitResponse.status()).toBe(200)
+
+  await page.waitForURL(/\/weaver\/items\/[^/]+\/edit$/)
+  await waitForHydration(page)
+  await expect(page.getByText('สร้างฉบับแก้ใหม่สำเร็จ')).toBeVisible()
+  await expect(page.getByLabel('ชื่อผืนผ้า')).toHaveValue(title)
+
+  const updatedTitle = `${title} (ฉบับแก้ไข)`
+  const updatedNotes = 'แก้ไขหลังปฏิเสธ E2E'
+  const evidenceFileName = `resubmit-evidence-${runId}.png`
+
+  await page.getByLabel('ชื่อผืนผ้า').fill(updatedTitle)
+  await page.getByLabel('หมายเหตุ').fill(updatedNotes)
+  await page.getByLabel('เลือกไฟล์หลักฐาน').setInputFiles({
+    name: evidenceFileName,
+    mimeType: 'image/png',
+    buffer: PNG_BUFFER,
+  })
+
+  const patchResponsePromise = page.waitForResponse(
+    res => res.request().method() === 'PATCH' && res.url().includes(`/api/silk-items/${created.id}`),
+    { timeout: 10_000 },
+  )
+  await page.getByRole('button', { name: 'บันทึก', exact: true }).click()
+  const patchResponse = await patchResponsePromise
+  expect(patchResponse.status()).toBe(200)
+
+  await expect(page.getByText('บันทึกข้อมูลผ้าไหมสำเร็จ')).toBeVisible()
+  await page.waitForURL(/\/weaver\/items\/[^/]+$/)
+  await waitForHydration(page)
+  await expect(page.getByText('ฉบับแก้ไขที่ 2')).toBeVisible()
+  await expect(page.getByText(updatedTitle)).toBeVisible()
+  await expect(page.getByText(updatedNotes)).toBeVisible()
+  await expect(page.getByText('หลักฐานประกอบ (1)')).toBeVisible()
+  await expect(page.getByText(evidenceFileName)).toBeVisible()
 })

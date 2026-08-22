@@ -22,13 +22,7 @@ const loadData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    await new Promise(resolve => setTimeout(resolve, 500))
-    // TODO(api): GET /api/reviews → ReviewQueueItem[]
-    items.value = [
-      { requestId: 'req-001', silkItemPublicId: 'SI-001', revisionTitle: 'ผ้าไหมมัดมีกล้วยหอม ผืนที่ 1', submittedBy: 'แม่สมใจ', submittedAt: '2026-08-18T09:30:00Z' },
-      { requestId: 'req-002', silkItemPublicId: 'SI-002', revisionTitle: 'ผ้าไหมโขงสีคราม', submittedBy: 'แม่บุญมา', submittedAt: '2026-08-19T14:20:00Z' },
-      { requestId: 'req-003', silkItemPublicId: 'SI-003', revisionTitle: 'ผ้าไหมทอผ้าข้าง ลายดอกไม้', submittedBy: 'แม่ละมัย', submittedAt: '2026-08-20T10:15:00Z' },
-    ]
+    items.value = await $fetch<ReviewQueueItem[]>('/api/reviews')
   } catch {
     error.value = 'โหลดคิวคำขอไม่สำเร็จ กรุณาลองใหม่'
   } finally {

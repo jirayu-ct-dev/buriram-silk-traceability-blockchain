@@ -9,12 +9,14 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
       id: string
       displayName: string
       role: 'WEAVER' | 'COOPERATIVE_OFFICER' | 'STORE_USER'
+      organizationId?: string | null
       organizationName?: string
     }
     authSession.user.value = {
       id: rawUser.id,
       displayName: rawUser.displayName,
       role: rawUser.role,
+      organizationId: rawUser.organizationId ?? null,
       organizationName: rawUser.organizationName || '',
     }
   }

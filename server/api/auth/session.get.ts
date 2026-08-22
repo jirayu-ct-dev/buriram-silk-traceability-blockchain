@@ -4,6 +4,7 @@ export default defineEventHandler(async (event) => {
     id: dbUser.id,
     displayName: dbUser.displayName,
     role: dbUser.role,
+    organizationId: dbUser.organizationId ?? null,
     organizationName: dbUser.organization?.name || '',
   }
 })

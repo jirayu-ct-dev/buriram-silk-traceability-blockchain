@@ -15,14 +15,7 @@ const entries = ref<AuditEntry[]>([])
 const load = async () => {
   isLoading.value = true; error.value = null
   try {
-    await new Promise(r => setTimeout(r, 400))
-    // TODO(api): GET /api/audit/:silkItemId — mock ก่อน
-    entries.value = [
-      { at: '2026-08-10T09:00:00Z', actor: 'แม่สมใจ (WEAVER)', action: 'CREATE_DRAFT', detail: 'สร้างฉบับร่าง #1' },
-      { at: '2026-08-18T09:30:00Z', actor: 'แม่สมใจ (WEAVER)', action: 'SUBMIT', detail: 'ส่งขอรับรอง' },
-      { at: '2026-08-19T14:20:00Z', actor: 'เจ้าหน้าที่สหกรณ์', action: 'APPROVE', detail: 'อนุมัติ — ออกใบรับรอง BR-SILK-001' },
-      { at: '2026-08-20T10:00:00Z', actor: 'สหกรณ์ผ้าไหม', action: 'TRANSFER_INITIATED', detail: 'เริ่มส่งมอบไป ร้านไหมบุรีรัมย์' },
-    ]
+    entries.value = await $fetch<AuditEntry[]>(String(`/api/audit/${silkItemId.value}`))
   } catch { error.value = 'โหลดไม่สำเร็จ' } finally { isLoading.value = false }
 }
 onMounted(load)

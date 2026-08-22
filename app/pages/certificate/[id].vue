@@ -41,31 +41,9 @@ const load = async () => {
   const code = certificateCode.value.trim()
   if (!code) { error.value = 'ไม่พบ Certificate ID'; isLoading.value = false; return }
   try {
-    await new Promise(r => setTimeout(r, 400))
-    // TODO(api): GET /api/public/certificates/:code
-    const mock: Record<string, PublicCertificate> = {
-      'BR-SILK-001': {
-        result: 'VALID', certificateCode: 'BR-SILK-001', issuedAt: '2026-08-15T08:00:00Z',
-        silkItem: { publicId: 'SI-001', title: 'ผ้าไหมมัดมีกล้วยหอม', pattern: 'กล้วยหอม', technique: 'ทอผ้าข้าง' },
-        weaverDisplayName: 'แม่สมใจ', issuerOrgName: 'สหกรณ์ผ้าไหมบุรีรัมย์',
-        custodyTimeline: [
-          { event: 'ISSUE_CERTIFICATE', orgName: 'สหกรณ์ผ้าไหมบุรีรัมย์', at: '2026-08-15T08:00:00Z' },
-          { event: 'TRANSFER_ACCEPTED', orgName: 'ร้านไหมบุรีรัมย์', at: '2026-08-18T10:00:00Z' },
-        ],
-        hashSummary: { blockIndex: 5, blockHash: 'a1b2c3d4e5f67890abcdef1234567890abcdef12', previousHash: '0000abcd1234ef567890', validatorName: 'COOPERATIVE_AUTHORITY', signatureValid: true },
-      },
-      'BR-SILK-002': {
-        result: 'SUSPENDED', certificateCode: 'BR-SILK-002', issuedAt: '2026-07-20T08:00:00Z',
-        silkItem: { publicId: 'SI-002', title: 'ผ้าไหมโขงสีคราม', pattern: 'โขง', technique: 'ทอจักร' },
-        weaverDisplayName: 'แม่บุญมา', issuerOrgName: 'สหกรณ์ผ้าไหมบุรีรัมย์',
-        custodyTimeline: [{ event: 'CERTIFICATE_SUSPENDED', orgName: 'สหกรณ์ผ้าไหมบุรีรัมย์', at: '2026-08-19T09:00:00Z' }],
-        hashSummary: { blockIndex: 7, blockHash: 'deadbeef1234567890abcdef', previousHash: 'cafebabe00001111', validatorName: 'LOCAL_CERTIFIER_AUTHORITY', signatureValid: true },
-      },
-    }
-    if (mock[code]) data.value = mock[code]
-    else data.value = { result: 'NOT_FOUND', certificateCode: code, silkItem: { publicId: '-', title: '-' }, weaverDisplayName: '-', issuerOrgName: '-', custodyTimeline: [], hashSummary: { blockIndex: -1, blockHash: '', previousHash: '', validatorName: '-', signatureValid: false } }
+    data.value = await $fetch<PublicCertificate>(String(`/api/public/certificates/${encodeURIComponent(code)}`))
   } catch {
-    error.value = 'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่'
+    error.value = 'โหลดข้้อมูลไม่สำเร็จ กรุณาลองใหม่'
   } finally { isLoading.value = false }
 }
 

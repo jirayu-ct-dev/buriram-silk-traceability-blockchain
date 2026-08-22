@@ -28,6 +28,7 @@ export const STATUS_META: Record<string, StatusMeta> = {
 
   // Public verification result (§12)
   VALID: { label: 'ผ่านการตรวจสอบ', tone: 'success' },
+  CHAIN_INVALID: { label: 'ห่วงโซ่ไม่สมบูรณ์', tone: 'error' },
   NOT_FOUND: { label: 'ไม่พบข้อมูล', tone: 'neutral' },
 }
 

@@ -61,6 +61,7 @@ export default defineEventHandler(async (event) => {
       publicId: item.publicId,
       title: item.revisions[0]?.title || 'ไม่ระบุชื่อ',
       status,
+      certificateStatus: item.certificate?.status,
       updatedAt: item.updatedAt.toISOString(),
     }
   })

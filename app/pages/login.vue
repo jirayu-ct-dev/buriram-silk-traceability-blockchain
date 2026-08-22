@@ -133,7 +133,7 @@ const getInputValue = (event: Event): string => {
 
           <div>
             <label for="password" class="block text-sm font-medium text-neutral-700">รหัสผ่าน</label>
-            <div class="relative">
+            <div class="relative mt-1.5">
               <input
                 id="password"
                 v-model="form.password"
@@ -141,7 +141,7 @@ const getInputValue = (event: Event): string => {
                 :type="showPassword ? 'text' : 'password'"
                 autocomplete="current-password"
                 placeholder="รหัสผ่าน"
-                class="mt-1.5 w-full rounded-lg border px-3 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-neutral-100 transition-colors pr-12"
+                class="w-full rounded-lg border px-3 py-2.5 pr-12 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-neutral-100 transition-colors"
                 :class="{ 'border-error-500': errors.password || errors.form, 'border-neutral-300': !errors.password && !errors.form }"
                 :aria-invalid="(errors.password || errors.form) ? 'true' : 'false'"
                 :aria-describedby="errors.password ? 'password-error' : (errors.form ? 'form-error' : undefined)"
@@ -151,7 +151,7 @@ const getInputValue = (event: Event): string => {
               <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute right-3 top-[calc(50%+1.5rem)] -translate-y-1/2 text-neutral-400 hover:text-neutral-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                class="absolute right-1.5 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded text-neutral-400 hover:text-neutral-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 aria-label="แสดง/ซ่อนรหัสผ่าน"
               >
                 <component :is="showPassword ? EyeOff : Eye" class="size-5" aria-hidden="true" />

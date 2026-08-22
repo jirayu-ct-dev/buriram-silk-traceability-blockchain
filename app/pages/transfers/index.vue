@@ -1,46 +1,103 @@
 <script setup lang="ts">
-import { ArrowLeftRight, Plus } from '@lucide/vue'
+import { ArrowLeftRight, Plus, Loader2 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import { useConfirm } from '~/composables/useConfirm'
+import { useAuthSession } from '~/composables/useAuthSession'
+import type { CreateTransferInput, OrganizationOption, SilkItemSummary, TransferItem } from '~~/shared/types/api'
 
 definePageMeta({ layout: 'dashboard' })
 useHead({ title: 'การส่งมอบ' })
 
 const toast = useToast()
 const { confirm } = useConfirm()
-
-interface TransferItem { id: string, silkItemPublicId: string, silkItemTitle: string, fromOrgName: string, toOrgName: string, status: string, canResolve: boolean, createdAt: string }
+const { user } = useAuthSession()
 
 const isLoading = ref(true)
 const error = ref<string | null>(null)
 const items = ref<TransferItem[]>([])
-const showCreate = ref(false)
-const createForm = ref({ silkItemPublicId: '', toOrgName: '' })
 
-const load = async () => {
+const showCreate = ref(false)
+const isCreating = ref(false)
+const createForm = ref({ silkItemId: '', toOrgId: '' })
+
+const silkItemOptions = ref<SilkItemSummary[]>([])
+const organizationOptions = ref<OrganizationOption[]>([])
+const optionsError = ref<string | null>(null)
+const isOptionsLoading = ref(false)
+
+const eligibleSilkItems = computed(() =>
+  silkItemOptions.value.filter((item) => item.status === 'CERTIFIED' && item.certificateStatus === 'ACTIVE'),
+)
+const destinationOrganizations = computed(() =>
+  organizationOptions.value.filter((org) => org.id !== user.value?.organizationId),
+)
+const selectedSilkItem = computed(() => eligibleSilkItems.value.find((item) => item.id === createForm.value.silkItemId))
+const selectedOrganization = computed(() => destinationOrganizations.value.find((org) => org.id === createForm.value.toOrgId))
+
+const loadTransfers = async () => {
   isLoading.value = true
   error.value = null
   try {
-    await new Promise(r => setTimeout(r, 400))
-    // TODO(api): GET /api/transfers
-    items.value = [
-      { id: 't-001', silkItemPublicId: 'SI-001', silkItemTitle: 'ผ้าไหมมัดมีกล้วยหอม', fromOrgName: 'สหกรณ์ผ้าไหม', toOrgName: 'ร้านไหมบุรีรัมย์', status: 'PENDING', canResolve: true, createdAt: '2026-08-20T09:00:00Z' },
-      { id: 't-002', silkItemPublicId: 'SI-002', silkItemTitle: 'ผ้าไหมโขงสีคราม', fromOrgName: 'สหกรณ์ผ้าไหม', toOrgName: 'ร้านผ้าไหมทอง', status: 'ACCEPTED', canResolve: false, createdAt: '2026-08-18T10:00:00Z' },
-    ]
-  } catch { error.value = 'โหลดรายการไม่สำเร็จ' } finally { isLoading.value = false }
+    items.value = await $fetch<TransferItem[]>('/api/transfers')
+  } catch {
+    error.value = 'โหลดรายการไม่สำเร็จ กรุณาลองใหม่'
+  } finally {
+    isLoading.value = false
+  }
 }
-onMounted(load)
+
+const loadOptions = async () => {
+  isOptionsLoading.value = true
+  optionsError.value = null
+  try {
+    const [silkItems, organizations] = await Promise.all([
+      $fetch<SilkItemSummary[]>('/api/silk-items'),
+      $fetch<OrganizationOption[]>('/api/organizations'),
+    ])
+    silkItemOptions.value = silkItems
+    organizationOptions.value = organizations
+  } catch {
+    optionsError.value = 'โหลดตัวเลือกไม่สำเร็จ กรุณาลองใหม่'
+  } finally {
+    isOptionsLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadTransfers()
+  loadOptions()
+})
 
 const handleCreate = async () => {
-  if (!createForm.value.silkItemPublicId.trim() || !createForm.value.toOrgName.trim()) { toast.error('กรุณากรอกข้อมูลให้ครบ'); return }
-  const ok = await confirm({ title: 'ยืนยันสร้างการส่งมอบ', message: `ส่ง ${createForm.value.silkItemPublicId} ไปยัง ${createForm.value.toOrgName} ใช่หรือไม่?`, confirmLabel: 'สร้าง' })
+  if (!createForm.value.silkItemId || !createForm.value.toOrgId) {
+    toast.error('กรุณาเลือกผ้าไหมและองค์กรปลายทาง')
+    return
+  }
+
+  const ok = await confirm({
+    title: 'ยืนยันสร้างการส่งมอบ',
+    message: `ส่ง ${selectedSilkItem.value?.publicId ?? ''} ไปยัง ${selectedOrganization.value?.name ?? ''} ใช่หรือไม่?`,
+    confirmLabel: 'สร้าง',
+  })
   if (!ok) return
-  await new Promise(r => setTimeout(r, 500))
-  // TODO(api): POST /api/transfers { silkItemPublicId, toOrgName }
-  toast.success('สร้างการส่งมอบแล้ว')
-  showCreate.value = false
-  createForm.value = { silkItemPublicId: '', toOrgName: '' }
-  await load()
+
+  isCreating.value = true
+  try {
+    const payload: CreateTransferInput = {
+      silkItemId: createForm.value.silkItemId,
+      toOrgId: createForm.value.toOrgId,
+    }
+    await $fetch('/api/transfers', { method: 'POST', body: payload })
+    toast.success('สร้างการส่งมอบแล้ว')
+    showCreate.value = false
+    createForm.value = { silkItemId: '', toOrgId: '' }
+    await loadTransfers()
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.error(err?.data?.message ?? 'สร้างการส่งมอบไม่สำเร็จ')
+  } finally {
+    isCreating.value = false
+  }
 }
 </script>
 
@@ -56,18 +113,62 @@ const handleCreate = async () => {
 
     <div v-if="showCreate" class="mt-6 rounded-xl border border-neutral-200 bg-white p-6 space-y-4">
       <h2 class="text-sm font-semibold text-neutral-900">สร้างการส่งมอบใหม่ (เฉพาะ custodian และ cert ACTIVE)</h2>
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div><label for="tf-silk" class="block text-sm font-medium text-neutral-700">รหัสผ้า (มีใบรับรอง ACTIVE)</label><input id="tf-silk" v-model="createForm.silkItemPublicId" type="text" placeholder="เช่น SI-001" class="mt-1.5 w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary" /></div>
-        <div><label for="tf-to" class="block text-sm font-medium text-neutral-700">ร้านปลายทาง</label><input id="tf-to" v-model="createForm.toOrgName" type="text" placeholder="ชื่อร้าน" class="mt-1.5 w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary" /></div>
+
+      <div v-if="isOptionsLoading" class="flex items-center gap-2 text-sm text-neutral-500">
+        <Loader2 class="size-4 animate-spin" aria-hidden="true" />
+        กำลังโหลดตัวเลือก...
       </div>
-      <div class="flex justify-end gap-2"><button type="button" class="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50" @click="showCreate=false">ยกเลิก</button><button type="button" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700" @click="handleCreate">ยืนยันสร้าง</button></div>
-      <p class="text-xs text-neutral-500">* จะถูกตรวจซ้ำฝั่ง server: ต้องเป็น custodian ปัจจุบัน + ไม่มี pending ซ้อน + cert ACTIVE (§6.3)</p>
+      <div v-else-if="optionsError" class="rounded-lg border border-error-200 bg-error-50 p-4 text-sm text-error-700">
+        <p>{{ optionsError }}</p>
+        <button type="button" class="mt-3 rounded-lg border border-error-300 bg-white px-3 py-1.5 text-xs font-semibold text-error-700 hover:bg-error-50" @click="loadOptions">ลองใหม่</button>
+      </div>
+      <div v-else-if="eligibleSilkItems.length === 0" class="rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
+        ไม่มีผ้าไหมที่มีใบรับรอง ACTIVE และอยู่ในความดูแลของคุณในขณะนี้
+      </div>
+      <div v-else-if="destinationOrganizations.length === 0" class="rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
+        ไม่มีองค์กรปลายทางให้เลือก กรุณาติดต่อผู้ดูแลระบบ
+      </div>
+      <template v-else>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="tf-silk" class="block text-sm font-medium text-neutral-700">ผ้าไหม (มีใบรับรอง ACTIVE)</label>
+            <select id="tf-silk" v-model="createForm.silkItemId" class="mt-1.5 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary">
+              <option value="">— เลือกผ้าไหม —</option>
+              <option v-for="item in eligibleSilkItems" :key="item.id" :value="item.id">
+                {{ item.publicId }} — {{ item.title }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label for="tf-to" class="block text-sm font-medium text-neutral-700">องค์กรปลายทาง</label>
+            <select id="tf-to" v-model="createForm.toOrgId" class="mt-1.5 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary">
+              <option value="">— เลือกองค์กร —</option>
+              <option v-for="org in destinationOrganizations" :key="org.id" :value="org.id">
+                {{ org.name }} ({{ org.type === 'STORE' ? 'ร้านค้า' : 'สหกรณ์' }})
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" class="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50" @click="showCreate = false">ยกเลิก</button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="isCreating || !createForm.silkItemId || !createForm.toOrgId"
+            @click="handleCreate"
+          >
+            <Loader2 v-if="isCreating" class="size-4 animate-spin" aria-hidden="true" />
+            ยืนยันสร้าง
+          </button>
+        </div>
+        <p class="text-xs text-neutral-500">* จะถูกตรวจซ้ำฝั่ง server: ต้องเป็น custodian ปัจจุบัน + ไม่มี pending ซ้อน + cert ACTIVE (§6.3)</p>
+      </template>
     </div>
 
     <div class="mt-6">
       <div v-if="isLoading"><UiSkeletonList :rows="4" /></div>
-      <div v-else-if="error"><UiErrorState :description="error" retry-label="ลองใหม่" @retry="load" /></div>
-      <div v-else-if="items.length===0"><UiEmptyState title="ยังไม่มีรายการส่งมอบ" description="เมื่อมีการส่งมอบ รายการจะปรากฏที่นี่" /></div>
+      <div v-else-if="error"><UiErrorState :description="error" retry-label="ลองใหม่" @retry="loadTransfers" /></div>
+      <div v-else-if="items.length === 0"><UiEmptyState title="ยังไม่มีรายการส่งมอบ" description="เมื่อมีการส่งมอบ รายการจะปรากฏที่นี่" /></div>
       <div v-else class="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
         <table class="w-full text-left text-sm">
           <thead class="bg-neutral-50 text-xs font-medium uppercase tracking-wide text-neutral-500">

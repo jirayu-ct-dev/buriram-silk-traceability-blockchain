@@ -19,14 +19,12 @@ const copy = async (v: string, k: string) => { await navigator.clipboard.writeTe
 const load = async () => {
   isLoading.value = true; error.value = null
   try {
-    await new Promise(r => setTimeout(r, 400))
-    // TODO(api): GET /api/ledger/blocks + GET /api/ledger/verify
-    blocks.value = [
-      { index: 0, timestamp: '2026-08-01T00:00:00Z', hash: '0000genesisabcd1234567890', previousHash: '0000000000000000', validatorName: 'COOPERATIVE_AUTHORITY', eventCount: 1 },
-      { index: 1, timestamp: '2026-08-15T08:00:00Z', hash: 'a1b2c3d4e5f67890abcdef1234', previousHash: '0000genesisabcd1234567890', validatorName: 'LOCAL_CERTIFIER_AUTHORITY', eventCount: 1 },
-      { index: 2, timestamp: '2026-08-18T10:00:00Z', hash: 'deadbeef1234567890abcdef5678', previousHash: 'a1b2c3d4e5f67890abcdef1234', validatorName: 'RETAIL_NETWORK_AUTHORITY', eventCount: 1 },
-    ]
-    verifyResult.value = { valid: true, checkedBlocks: blocks.value.length }
+    const [blocksData, verifyData] = await Promise.all([
+      $fetch<BlockSummary[]>('/api/ledger/blocks'),
+      $fetch<{ valid: boolean, checkedBlocks: number }>('/api/ledger/verify'),
+    ])
+    blocks.value = blocksData
+    verifyResult.value = verifyData
   } catch { error.value = 'โหลด ledger ไม่สำเร็จ' } finally { isLoading.value = false }
 }
 onMounted(load)

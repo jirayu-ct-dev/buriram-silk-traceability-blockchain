@@ -7,7 +7,7 @@ const rejectSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const dbUser = await requireRole(event, 'COOPERATIVE_OFFICER')
-  const requestId = event.context.params?.id
+  const requestId = getRouterParam(event, 'id')
 
   if (!requestId) {
     throw createApiError('BAD_REQUEST', 'กรุณาระบุไอดีของคำขอ', 400)

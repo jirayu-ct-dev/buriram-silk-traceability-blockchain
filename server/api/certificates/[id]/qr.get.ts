@@ -1,7 +1,7 @@
 import QRCode from 'qrcode'
 
 export default defineEventHandler(async (event) => {
-  const certId = event.context.params?.id
+  const certId = getRouterParam(event, 'id')
 
   if (!certId) {
     throw createApiError('BAD_REQUEST', 'กรุณาระบุไอดีของใบรับรอง', 400)
